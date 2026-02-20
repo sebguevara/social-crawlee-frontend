@@ -9,7 +9,7 @@ import {
   SiX,
   SiTiktok,
 } from "@icons-pack/react-simple-icons";
-import { toast } from "sonner";
+import { sileo } from "sileo";
 import {
   Platform,
   JobType,
@@ -131,18 +131,17 @@ export function ScrapeForm() {
       }
 
       if (result.success && result.data) {
-        addJob(result.data.jobId);
-        toast.success("Ejecución creada correctamente", {
-          description: `La ejecución #${result.data.jobId} quedó en estado ${result.data.status.toLowerCase()}.`,
-        });
+        addJob(result.data.jobId, { showToast: true });
         router.push(`/dashboard/jobs/${result.data.jobId}`);
       } else {
-        toast.error("No se pudo crear la ejecución", {
+        sileo.error({
+          title: "No se pudo crear la ejecución",
           description: result.error ?? "Error desconocido",
         });
       }
     } catch {
-      toast.error("Error de red", {
+      sileo.error({
+        title: "Error de red",
         description: "No se pudo conectar con el servidor API.",
       });
     } finally {

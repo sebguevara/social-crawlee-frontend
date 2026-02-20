@@ -1,15 +1,22 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 const METRICS = [
   {
     value: "Perfiles",
-    detail: "Bio, followers, following, verified status, profile picture URL, account metadata",
+    detail:
+      "Bio, followers, following, verified status, profile picture URL, account metadata",
   },
   {
     value: "Publicaciones",
-    detail: "Caption, likes, comments count, shares, media URLs, hashtags, mentions, timestamp",
+    detail:
+      "Caption, likes, comments count, shares, media URLs, hashtags, mentions, timestamp",
   },
   {
     value: "Comentarios",
-    detail: "Author info, comment text, likes, replies count, timestamp, parent thread context",
+    detail:
+      "Author info, comment text, likes, replies count, timestamp, parent thread context",
   },
 ] as const;
 
@@ -44,7 +51,13 @@ export function Scale() {
       <div className="relative z-10 mx-auto max-w-7xl">
         {/* Data you extract */}
         <div className="mb-24">
-          <div className="mb-12 flex flex-col items-center gap-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mb-12 flex flex-col items-center gap-4 text-center"
+          >
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Esquema de datos
             </span>
@@ -55,12 +68,37 @@ export function Scale() {
               Cada tipo de scraping devuelve datos ricos y estructurados con
               campos consistentes en las cuatro plataformas.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid gap-px overflow-hidden rounded-2xl border border-border/50 bg-border/50 md:grid-cols-3">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+              },
+            }}
+            className="grid gap-px overflow-hidden rounded-2xl border border-border/50 bg-border/50 md:grid-cols-3"
+          >
             {METRICS.map((metric) => (
-              <div
+              <motion.div
                 key={metric.value}
+                variants={{
+                  hidden: { opacity: 0, scale: 0.95, filter: "blur(4px)" },
+                  show: {
+                    opacity: 1,
+                    scale: 1,
+                    filter: "blur(0px)",
+                    transition: {
+                      type: "spring",
+                      stiffness: 140,
+                      damping: 18,
+                    },
+                  },
+                }}
                 className="flex flex-col gap-3 bg-card p-8"
               >
                 <h3 className="text-lg font-semibold text-foreground">
@@ -69,27 +107,58 @@ export function Scale() {
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {metric.detail}
                 </p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* Use cases */}
         <div>
-          <div className="mb-12 flex flex-col items-center gap-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mb-12 flex flex-col items-center gap-4 text-center"
+          >
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Casos de uso
             </span>
             <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-5xl">
               Diseñado para flujos reales
             </h2>
-          </div>
+          </motion.div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.12, delayChildren: 0.05 },
+              },
+            }}
+            className="grid gap-6 md:grid-cols-2"
+          >
             {USE_CASES.map((useCase, i) => (
-              <div
+              <motion.div
                 key={useCase.title}
-                className="group relative flex flex-col gap-4 rounded-2xl border border-border/50 bg-card p-8 transition-all glow-card"
+                variants={{
+                  hidden: { opacity: 0, scale: 0.95, filter: "blur(4px)" },
+                  show: {
+                    opacity: 1,
+                    scale: 1,
+                    filter: "blur(0px)",
+                    transition: {
+                      type: "spring",
+                      stiffness: 140,
+                      damping: 18,
+                    },
+                  },
+                }}
+                className="group relative flex flex-col gap-4 rounded-2xl border border-border/50 bg-card p-8 glow-card"
               >
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-xs text-muted-foreground/50">
@@ -102,9 +171,9 @@ export function Scale() {
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {useCase.description}
                 </p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

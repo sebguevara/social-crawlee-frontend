@@ -1,4 +1,7 @@
+"use client";
+
 import { APP_CONFIG } from "@/config/constants";
+import { motion } from "framer-motion";
 
 export function Footer() {
   return (
@@ -6,7 +9,12 @@ export function Footer() {
       {/* Subtle gradient bleed at bottom */}
       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-40 glow-orb opacity-20 blur-[100px]" />
 
-      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center gap-8">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="relative z-10 mx-auto flex max-w-7xl flex-col items-center gap-8"
+      >
         {/* Divider gradient */}
         <div className="divider-gradient w-full" />
 
@@ -45,7 +53,7 @@ export function Footer() {
             {new Date().getFullYear()} {APP_CONFIG.name}
           </p>
         </div>
-      </div>
+      </motion.div>
     </footer>
   );
 }

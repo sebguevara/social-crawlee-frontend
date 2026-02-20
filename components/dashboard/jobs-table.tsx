@@ -11,7 +11,7 @@ import {
   formatDuration,
 } from "@/lib/formatters";
 import { apiClient } from "@/lib/api";
-import { toast } from "sonner";
+import { sileo } from "sileo";
 import { XCircle, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { JobStatus } from "@/types";
@@ -34,13 +34,22 @@ export function JobsTable({
     try {
       const res = await apiClient.stopJob(jobId);
       if (res.success) {
-        toast.success("Ejecución detenida");
+        sileo.success({
+          title: "Ejecución detenida",
+          description: `La ejecución #${jobId} ha sido marcada como detenida.`,
+        });
         onRefresh?.();
       } else {
-        toast.error("No se pudo detener", { description: res.error });
+        sileo.error({
+          title: "No se pudo detener",
+          description: res.error ?? "Ocurrió un error inesperado.",
+        });
       }
     } catch {
-      toast.error("Error de red");
+      sileo.error({
+        title: "Error de red",
+        description: "No se pudo conectar con el servidor.",
+      });
     } finally {
       setProcessingId(null);
     }
@@ -52,13 +61,22 @@ export function JobsTable({
     try {
       const res = await apiClient.deleteJob(jobId);
       if (res.success) {
-        toast.success("Ejecución eliminada");
+        sileo.success({
+          title: "Ejecución eliminada",
+          description: `La ejecución #${jobId} ha sido borrada permanentemente.`,
+        });
         onRefresh?.();
       } else {
-        toast.error("No se pudo eliminar", { description: res.error });
+        sileo.error({
+          title: "No se pudo eliminar",
+          description: res.error ?? "Ocurrió un error inesperado.",
+        });
       }
     } catch {
-      toast.error("Error de red");
+      sileo.error({
+        title: "Error de red",
+        description: "No se pudo conectar con el servidor.",
+      });
     } finally {
       setProcessingId(null);
     }

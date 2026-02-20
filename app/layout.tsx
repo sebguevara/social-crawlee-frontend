@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
-import { Toaster } from "sonner";
+import { Toaster } from "sileo";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ClerkThemeProvider } from "@/components/clerk-theme-provider";
 import "./globals.css";
@@ -59,7 +59,7 @@ export default function RootLayout({
         >
           <ClerkThemeProvider>
             {children}
-            <Toaster theme="system" />
+            <Toaster position="bottom-right" />
           </ClerkThemeProvider>
         </ThemeProvider>
         <Analytics />

@@ -12,7 +12,7 @@ import { formatRelativeTime, getJobTypeLabel } from "@/lib/formatters";
 import { type DatasetItem, type Job } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { sileo } from "sileo";
 
 type CsvValue = string | number | boolean | null;
 type CsvRow = Record<string, CsvValue>;
@@ -88,21 +88,28 @@ export default function DatasetsPage() {
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copiado al portapapeles");
+    sileo.success({
+      title: "Copiado",
+      description: "El ID del dataset está en tu portapapeles.",
+    });
   };
 
   const handleExport = async (jobId: number, datasetId: string) => {
     const result = await apiClient.getDataset({ jobId, datasetId });
     if (!result.success || !result.data) {
-      toast.error("No se pudo exportar el dataset", {
-        description: result.error ?? "Error desconocido",
+      sileo.error({
+        title: "Error al exportar",
+        description: result.error ?? "No se pudo obtener el dataset.",
       });
       return;
     }
 
     const rows = result.data.items.map(mapDatasetItemToCsvRow);
     if (rows.length === 0) {
-      toast.error("El dataset no tiene datos para exportar");
+      sileo.warning({
+        title: "Dataset vacío",
+        description: "Este dataset no contiene registros para exportar.",
+      });
       return;
     }
 
@@ -113,6 +120,10 @@ export default function DatasetsPage() {
 
     const csv = generateCsv(config)(rows);
     download(config)(csv);
+    sileo.success({
+      title: "Exportación exitosa",
+      description: `Se ha descargado el archivo CSV para el dataset ${datasetId}.`,
+    });
   };
 
   return (

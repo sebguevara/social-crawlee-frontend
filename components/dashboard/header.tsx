@@ -41,8 +41,8 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
   } = useNotifications();
 
   return (
-    <header className="sticky top-0 z-10 flex flex-col gap-4 border-b border-border/30 bg-background/80 px-6 py-[11px] backdrop-blur-xl md:flex-row md:items-center md:justify-between">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border/30 bg-background/80 px-4 py-[11px] backdrop-blur-xl sm:px-6">
+      <div className="flex min-w-0 items-center gap-3">
         {/* Mobile menu trigger */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
@@ -65,8 +65,11 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
           </SheetContent>
         </Sheet>
 
-        <div className="flex flex-col gap-0.5">
-          <h1 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
+        <div className="min-w-0 flex flex-col gap-0.5">
+          <h1
+            suppressHydrationWarning
+            className="truncate text-lg font-semibold tracking-tight text-foreground md:text-xl"
+          >
             {title}
           </h1>
           {description && (
@@ -77,7 +80,7 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5">
+      <div className="ml-auto flex shrink-0 items-center gap-2.5">
         {/* Theme toggle */}
         <ThemeToggle />
 

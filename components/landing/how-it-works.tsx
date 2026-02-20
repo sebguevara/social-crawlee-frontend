@@ -1,4 +1,7 @@
+"use client";
+
 import { Send, RefreshCw, Database, Download } from "lucide-react";
+import { motion } from "framer-motion";
 
 const STEPS = [
   {
@@ -37,7 +40,13 @@ export function HowItWorks() {
       <div className="pointer-events-none absolute inset-0 gradient-aurora" />
 
       <div className="relative z-10 mx-auto max-w-6xl">
-        <div className="mb-20 flex flex-col items-center gap-4 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mb-20 flex flex-col items-center gap-4 text-center"
+        >
           <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Flujo
           </span>
@@ -47,17 +56,54 @@ export function HowItWorks() {
           <p className="max-w-xl text-pretty leading-relaxed text-muted-foreground">
             Un pipeline simple por fuera, robusto por dentro.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="relative grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.08,
+              },
+            },
+          }}
+          className="relative grid gap-8 md:grid-cols-2 lg:grid-cols-4"
+        >
           {/* Horizontal connector */}
-          <div className="pointer-events-none absolute top-8 left-[12%] right-[12%] hidden lg:block">
+          <motion.div
+            variants={{
+              hidden: { scaleX: 0, opacity: 0 },
+              show: {
+                scaleX: 1,
+                opacity: 1,
+                transition: { duration: 0.6, delay: 0.2 },
+              },
+            }}
+            className="pointer-events-none absolute top-8 left-[12%] right-[12%] hidden origin-left lg:block"
+          >
             <div className="divider-gradient" />
-          </div>
+          </motion.div>
 
           {STEPS.map((step) => (
-            <div
+            <motion.div
               key={step.step}
+              variants={{
+                hidden: { opacity: 0, scale: 0.95, filter: "blur(4px)" },
+                show: {
+                  opacity: 1,
+                  scale: 1,
+                  filter: "blur(0px)",
+                  transition: {
+                    type: "spring",
+                    stiffness: 140,
+                    damping: 18,
+                  },
+                },
+              }}
               className="group relative flex flex-col gap-5"
             >
               <div className="flex items-center gap-4">
@@ -75,9 +121,9 @@ export function HowItWorks() {
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {step.description}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

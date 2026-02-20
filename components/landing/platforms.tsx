@@ -1,3 +1,5 @@
+"use client";
+
 import {
   SiInstagram,
   SiFacebook,
@@ -6,6 +8,7 @@ import {
 } from "@icons-pack/react-simple-icons";
 import { PLATFORMS } from "@/config/constants";
 import { Platform } from "@/types";
+import { motion } from "framer-motion";
 
 const PLATFORM_ICONS: Record<Platform, React.ElementType> = {
   [Platform.INSTAGRAM]: SiInstagram,
@@ -65,7 +68,13 @@ export function Platforms() {
       <div className="pointer-events-none absolute inset-0 gradient-sweep" />
 
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="mb-20 flex flex-col items-center gap-4 text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mb-20 flex flex-col items-center gap-4 text-center"
+        >
           <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Plataformas compatibles
           </span>
@@ -76,17 +85,44 @@ export function Platforms() {
             Todas las plataformas devuelven esquemas estructurados iguales.
             Cambia de red modificando un solo parámetro.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1,
+              },
+            },
+          }}
+          className="grid gap-6 md:grid-cols-2"
+        >
           {entries.map((platform) => {
             const Icon = PLATFORM_ICONS[platform.key];
             const data = PLATFORM_DATA[platform.key];
 
             return (
-              <div
+              <motion.div
                 key={platform.key}
-                className="group relative flex flex-col gap-6 overflow-hidden rounded-2xl border border-border/50 bg-card p-8 transition-all glow-card"
+                variants={{
+                  hidden: { opacity: 0, scale: 0.95, filter: "blur(4px)" },
+                  show: {
+                    opacity: 1,
+                    scale: 1,
+                    filter: "blur(0px)",
+                    transition: {
+                      type: "spring",
+                      stiffness: 140,
+                      damping: 18,
+                    },
+                  },
+                }}
+                className="group relative flex flex-col gap-6 overflow-hidden rounded-2xl border border-border/50 bg-card p-8 glow-card"
               >
                 {/* Hover glow orb */}
                 <div className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full glow-orb opacity-0 transition-opacity duration-500 group-hover:opacity-60 blur-[60px]" />
@@ -127,10 +163,10 @@ export function Platforms() {
                     </span>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

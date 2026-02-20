@@ -8,7 +8,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { toast } from "sonner";
+import { sileo } from "sileo";
 import { apiClient } from "@/lib/api";
 import { Job, JobStatus } from "@/types";
 
@@ -24,13 +24,20 @@ export interface Notification {
 
 interface JobMonitorContextType {
   activeJobs: Job[];
-  addJob: (jobId: number) => void;
+  addJob: (jobId: number, options?: { showToast?: boolean }) => void;
   isScraping: boolean;
   notifications: Notification[];
   unreadCount: number;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
+  notify: (n: {
+    title: string;
+    description: string;
+    type: "success" | "error" | "info" | "warning";
+    jobId?: number;
+    button?: { title: string; onClick: () => void };
+  }) => void;
 }
 
 const JobMonitorContext = createContext<JobMonitorContextType | undefined>(
@@ -101,6 +108,47 @@ export function JobMonitorProvider({
     setNotifications([]);
   }, []);
 
+  const notify = useCallback(
+    (n: {
+      title: string;
+      description: string;
+      type: "success" | "error" | "info" | "warning";
+      jobId?: number;
+      button?: { title: string; onClick: () => void };
+    }) => {
+      // Persistent record
+      addNotification({
+        title: n.title,
+        description: n.description,
+        type: n.type === "warning" ? "info" : n.type,
+        jobId: n.jobId,
+      });
+
+      // Sileo interaction
+      const options = {
+        title: n.title,
+        description: n.description,
+        button: n.button,
+      };
+
+      switch (n.type) {
+        case "success":
+          sileo.success(options);
+          break;
+        case "error":
+          sileo.error(options);
+          break;
+        case "warning":
+          sileo.warning(options);
+          break;
+        default:
+          sileo.info(options);
+          break;
+      }
+    },
+    [addNotification],
+  );
+
   const monitorJob = useCallback(
     (jobId: number) => {
       if (activeJobsMap.has(jobId)) return;
@@ -111,29 +159,26 @@ export function JobMonitorProvider({
         },
         onDone: (job) => {
           updateJob(job);
-          const title = `Scraping finalizado`;
-          const description = `Job #${job.id} (${job.platform}) se completó con éxito.`;
-
-          toast.success(title, { description });
-          addNotification({
-            title,
-            description,
+          notify({
+            title: "Scraping finalizado",
+            description: `Ejecución #${job.id} de ${job.platform} completada con éxito.`,
             type: "success",
             jobId: job.id,
+            button: {
+              title: "Ver Resultados",
+              onClick: () =>
+                (window.location.href = `/dashboard/datasets?jobId=${job.id}`),
+            },
           });
 
-          // Esperar un poco antes de remover para que la UI respire
+          // Wait a bit before removing to let UI breathe
           setTimeout(() => removeJob(jobId), 3000);
         },
         onError: (error) => {
           removeJob(jobId);
-          const title = `Error en scraping`;
-          const description = `El job #${jobId} falló: ${error}`;
-
-          toast.error(title, { description });
-          addNotification({
-            title,
-            description,
+          notify({
+            title: "Error en scraping",
+            description: `La ejecución #${jobId} falló: ${error}`,
             type: "error",
             jobId: jobId,
           });
@@ -142,20 +187,21 @@ export function JobMonitorProvider({
 
       return () => source.close();
     },
-    [activeJobsMap, removeJob, updateJob],
+    [activeJobsMap, removeJob, updateJob, notify],
   );
 
   const addJob = useCallback(
-    (jobId: number) => {
-      // Iniciar monitoreo inmediatamente si no existe
+    (jobId: number, options?: { showToast?: boolean }) => {
+      if (options?.showToast) {
+        sileo.info({
+          title: "Scraping iniciado",
+          description: `Se ha creado la ejecución #${jobId}. Monitoreando progreso...`,
+        });
+      }
       void monitorJob(jobId);
     },
     [monitorJob],
   );
-
-  // Al montar, podríamos buscar jobs que ya estén corriendo en el dashboard
-  // Pero por ahora, confiaremos en los que se agregan via addJob o
-  // una recarga inicial si implementamos persistencia.
 
   return (
     <JobMonitorContext.Provider
@@ -168,6 +214,7 @@ export function JobMonitorProvider({
         markAsRead,
         markAllAsRead,
         clearNotifications,
+        notify,
       }}
     >
       {children}
@@ -190,6 +237,7 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     clearNotifications,
+    notify,
   } = useJobMonitor();
   return {
     notifications,
@@ -197,5 +245,6 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
     clearNotifications,
+    notify,
   };
 }

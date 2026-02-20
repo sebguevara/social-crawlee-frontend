@@ -24,7 +24,7 @@ import {
 import { JobStatus, type Job } from "@/types";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { sileo } from "sileo";
 
 interface JobDetailPageProps {
   params: Promise<{ id: string }>;
@@ -134,7 +134,10 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
 
   const handleCopyDatasetId = () => {
     navigator.clipboard.writeText(job.datasetId);
-    toast.success("ID del dataset copiado al portapapeles");
+    sileo.success({
+      title: "Copiado",
+      description: "ID del dataset copiado al portapapeles",
+    });
   };
 
   return (

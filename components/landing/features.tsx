@@ -1,11 +1,7 @@
-import {
-  Layers,
-  Braces,
-  Activity,
-  Shield,
-  Zap,
-  BarChart3,
-} from "lucide-react";
+"use client";
+
+import { Layers, Braces, Activity, Shield, Zap, BarChart3 } from "lucide-react";
+import { motion } from "framer-motion";
 
 const FEATURES = [
   {
@@ -52,7 +48,13 @@ export function Features() {
       <div className="pointer-events-none absolute inset-0 gradient-aurora" />
 
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="mb-20 flex flex-col items-center gap-4 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="mb-20 flex flex-col items-center gap-4 text-center"
+        >
           <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Capacidades
           </span>
@@ -63,13 +65,41 @@ export function Features() {
             Cada función está pensada para scraping a escala de producción con
             confiabilidad, velocidad y salida de datos limpia.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-border/50 bg-border/50 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.08,
+                delayChildren: 0.05,
+              },
+            },
+          }}
+          className="grid gap-px overflow-hidden rounded-2xl border border-border/50 bg-border/50 md:grid-cols-2 lg:grid-cols-3"
+        >
           {FEATURES.map((feature) => (
-            <div
+            <motion.div
               key={feature.title}
-              className="group flex flex-col gap-4 bg-card p-8 transition-colors hover:bg-secondary/50"
+              variants={{
+                hidden: { opacity: 0, scale: 0.95, filter: "blur(4px)" },
+                show: {
+                  opacity: 1,
+                  scale: 1,
+                  filter: "blur(0px)",
+                  transition: {
+                    type: "spring",
+                    stiffness: 140,
+                    damping: 18,
+                  },
+                },
+              }}
+              className="group flex flex-col gap-4 bg-card p-8 hover:bg-secondary/50 transition-colors duration-300"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border/50 text-muted-foreground transition-colors group-hover:border-primary/30 group-hover:text-primary">
                 <feature.icon className="h-5 w-5" />
@@ -80,9 +110,9 @@ export function Features() {
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {feature.description}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
