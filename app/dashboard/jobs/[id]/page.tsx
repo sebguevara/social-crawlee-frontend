@@ -32,12 +32,12 @@ interface JobDetailPageProps {
 
 export default function JobDetailPage({ params }: JobDetailPageProps) {
   const { id } = use(params);
-  const jobId = Number(id);
+  const jobId = id;
   const [job, setJob] = useState<Job | null>(null);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!Number.isFinite(jobId) || jobId <= 0) {
+    if (!jobId?.trim()) {
       setNotFound(true);
       return;
     }

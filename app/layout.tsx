@@ -59,7 +59,19 @@ export default function RootLayout({
         >
           <ClerkThemeProvider>
             {children}
-            <Toaster position="bottom-right" />
+            <Toaster
+              position="bottom-right"
+              options={{
+                fill: "var(--sileo-fill)",
+                styles: {
+                  title: "!text-foreground",
+                  description: "!text-muted-foreground",
+                  badge: "!bg-secondary !text-secondary-foreground",
+                  button:
+                    "!bg-primary !text-primary-foreground hover:!bg-primary/90",
+                },
+              }}
+            />
           </ClerkThemeProvider>
         </ThemeProvider>
         <Analytics />

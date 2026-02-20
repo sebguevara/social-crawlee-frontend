@@ -13,7 +13,7 @@ import {
 
 export const MOCK_JOBS: Job[] = [
   {
-    id: 1,
+    id: "1",
     datasetId: "ds_a1b2c3d4",
     platform: Platform.INSTAGRAM,
     jobType: JobType.PROFILE,
@@ -27,7 +27,7 @@ export const MOCK_JOBS: Job[] = [
     finishedAt: "2026-02-19T10:02:30Z",
   },
   {
-    id: 2,
+    id: "2",
     datasetId: "ds_e5f6g7h8",
     platform: Platform.X,
     jobType: JobType.POSTS,
@@ -40,7 +40,7 @@ export const MOCK_JOBS: Job[] = [
     updatedAt: "2026-02-19T11:18:00Z",
   },
   {
-    id: 3,
+    id: "3",
     datasetId: "ds_i9j0k1l2",
     platform: Platform.TIKTOK,
     jobType: JobType.COMMENTS,
@@ -57,7 +57,7 @@ export const MOCK_JOBS: Job[] = [
     updatedAt: "2026-02-19T11:30:00Z",
   },
   {
-    id: 4,
+    id: "4",
     datasetId: "ds_m3n4o5p6",
     platform: Platform.FACEBOOK,
     jobType: JobType.PROFILE,
@@ -74,7 +74,7 @@ export const MOCK_JOBS: Job[] = [
     finishedAt: "2026-02-18T09:05:00Z",
   },
   {
-    id: 5,
+    id: "5",
     datasetId: "ds_q7r8s9t0",
     platform: Platform.INSTAGRAM,
     jobType: JobType.POSTS,
@@ -89,7 +89,7 @@ export const MOCK_JOBS: Job[] = [
     errorMessage: "Profile is private. Unable to scrape posts.",
   },
   {
-    id: 6,
+    id: "6",
     datasetId: "ds_u1v2w3x4",
     platform: Platform.X,
     jobType: JobType.COMMENTS,
@@ -107,7 +107,7 @@ export const MOCK_JOBS: Job[] = [
     finishedAt: "2026-02-17T08:10:00Z",
   },
   {
-    id: 7,
+    id: "7",
     datasetId: "ds_y5z6a7b8",
     platform: Platform.TIKTOK,
     jobType: JobType.PROFILE,
@@ -129,7 +129,7 @@ export const MOCK_JOBS: Job[] = [
     updatedAt: "2026-02-19T12:04:00Z",
   },
   {
-    id: 8,
+    id: "8",
     datasetId: "ds_c9d0e1f2",
     platform: Platform.FACEBOOK,
     jobType: JobType.POSTS,

@@ -7,6 +7,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import { sileo } from "sileo";
 import { apiClient } from "@/lib/api";
@@ -17,27 +18,29 @@ export interface Notification {
   title: string;
   description: string;
   timestamp: Date;
-  type: "success" | "error" | "info";
+  type: "success" | "error" | "info" | "warning";
   read: boolean;
-  jobId?: number;
+  jobId?: string;
+}
+
+interface NotificationOptions {
+  title: string;
+  description: string;
+  type: "success" | "error" | "info" | "warning";
+  jobId?: string;
+  button?: { title: string; onClick: () => void };
 }
 
 interface JobMonitorContextType {
   activeJobs: Job[];
-  addJob: (jobId: number, options?: { showToast?: boolean }) => void;
+  addJob: (jobId: string, options?: { showToast?: boolean }) => void;
   isScraping: boolean;
   notifications: Notification[];
   unreadCount: number;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
-  notify: (n: {
-    title: string;
-    description: string;
-    type: "success" | "error" | "info" | "warning";
-    jobId?: number;
-    button?: { title: string; onClick: () => void };
-  }) => void;
+  notify: (options: NotificationOptions) => void;
 }
 
 const JobMonitorContext = createContext<JobMonitorContextType | undefined>(
@@ -49,10 +52,11 @@ export function JobMonitorProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [activeJobsMap, setActiveJobsMap] = useState<Map<number, Job>>(
+  const [activeJobsMap, setActiveJobsMap] = useState<Map<string, Job>>(
     new Map(),
   );
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const notifiedJobs = useRef<Set<string>>(new Set());
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
@@ -65,7 +69,7 @@ export function JobMonitorProvider({
   );
   const isScraping = activeJobs.length > 0;
 
-  const removeJob = useCallback((jobId: number) => {
+  const removeJob = useCallback((jobId: string) => {
     setActiveJobsMap((prev) => {
       const next = new Map(prev);
       next.delete(jobId);
@@ -109,40 +113,74 @@ export function JobMonitorProvider({
   }, []);
 
   const notify = useCallback(
-    (n: {
-      title: string;
-      description: string;
-      type: "success" | "error" | "info" | "warning";
-      jobId?: number;
-      button?: { title: string; onClick: () => void };
-    }) => {
+    (options: NotificationOptions) => {
+      // Prevent duplicate notifications for the same jobId AND same title
+      const notificationKey = options.jobId
+        ? `${options.jobId}-${options.title}`
+        : null;
+      if (notificationKey && notifiedJobs.current.has(notificationKey)) {
+        return;
+      }
+
       // Persistent record
       addNotification({
-        title: n.title,
-        description: n.description,
-        type: n.type === "warning" ? "info" : n.type,
-        jobId: n.jobId,
+        title: options.title,
+        description: options.description,
+        type: options.type,
+        jobId: options.jobId,
       });
 
+      if (notificationKey) {
+        notifiedJobs.current.add(notificationKey);
+      }
+
       // Sileo interaction
-      const options = {
-        title: n.title,
-        description: n.description,
-        button: n.button,
+      const sileoOptions = {
+        title: options.title,
+        description: options.description,
+        button: options.button,
       };
 
-      switch (n.type) {
+      switch (options.type) {
         case "success":
-          sileo.success(options);
+          sileo.success({
+            ...sileoOptions,
+            fill: "var(--sileo-state-success)",
+            styles: {
+              title: "!text-white",
+              description: "!text-white/80",
+            },
+          });
           break;
         case "error":
-          sileo.error(options);
+          sileo.error({
+            ...sileoOptions,
+            fill: "var(--sileo-state-error)",
+            styles: {
+              title: "!text-white",
+              description: "!text-white/80",
+            },
+          });
           break;
         case "warning":
-          sileo.warning(options);
+          sileo.warning({
+            ...sileoOptions,
+            fill: "var(--sileo-state-warning)",
+            styles: {
+              title: "!text-white",
+              description: "!text-white/80",
+            },
+          });
           break;
         default:
-          sileo.info(options);
+          sileo.info({
+            ...sileoOptions,
+            fill: "var(--sileo-state-info)",
+            styles: {
+              title: "!text-white",
+              description: "!text-white/80",
+            },
+          });
           break;
       }
     },
@@ -150,7 +188,7 @@ export function JobMonitorProvider({
   );
 
   const monitorJob = useCallback(
-    (jobId: number) => {
+    (jobId: string) => {
       if (activeJobsMap.has(jobId)) return;
 
       const source = apiClient.openDashboardJobStream(jobId, {
@@ -167,12 +205,12 @@ export function JobMonitorProvider({
             button: {
               title: "Ver Resultados",
               onClick: () =>
-                (window.location.href = `/dashboard/datasets?jobId=${job.id}`),
+                (window.location.href = `/dashboard/datasets/ds_${job.id}`),
             },
           });
 
           // Wait a bit before removing to let UI breathe
-          setTimeout(() => removeJob(jobId), 3000);
+          setTimeout(() => removeJob(job.id), 3000);
         },
         onError: (error) => {
           removeJob(jobId);
@@ -191,7 +229,7 @@ export function JobMonitorProvider({
   );
 
   const addJob = useCallback(
-    (jobId: number, options?: { showToast?: boolean }) => {
+    (jobId: string, options?: { showToast?: boolean }) => {
       if (options?.showToast) {
         sileo.info({
           title: "Scraping iniciado",

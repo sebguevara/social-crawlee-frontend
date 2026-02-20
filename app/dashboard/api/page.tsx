@@ -18,29 +18,30 @@ const ENDPOINTS: Endpoint[] = [
   {
     method: "POST",
     path: "/api/scrape/profiles",
-    title: "Scrapear perfiles",
+    title: "Scrapear perfiles (Batch)",
     description:
-      "Recibe una plataforma y un array de usuarios, luego encola trabajos PROFILE desacoplados.",
+      "Recibe una plataforma y un array de usuarios. Crea un trabajo PROFILE individual para cada usuario en la cola.",
     body: JSON.stringify(
       {
         platform: "INSTAGRAM",
         usernames: ["nike", "adidas"],
-        maxItems: 2,
       },
       null,
-      2
+      2,
     ),
     response: JSON.stringify(
       {
-        jobId: 1,
-        datasetId: "ds_a1b2c3d4",
-        status: "QUEUED",
-        platform: "INSTAGRAM",
-        jobType: "PROFILE",
-        createdAt: "2026-02-19T10:00:00Z",
+        message: "Jobs PROFILE procesados",
+        total: 2,
+        queued: 2,
+        failed: 0,
+        data: [
+          { status: "QUEUED", target: "nike", jobId: "ds_a1b2c3d4" },
+          { status: "QUEUED", target: "adidas", jobId: "ds_e5f6g7h8" },
+        ],
       },
       null,
-      2
+      2,
     ),
   },
   {
@@ -48,29 +49,29 @@ const ENDPOINTS: Endpoint[] = [
     path: "/api/scrape/posts",
     title: "Scrapear publicaciones",
     description:
-      "Scrapea publicaciones por usuarios (perfil) o enlaces directos (postUrls), con plataforma explícita.",
+      "Scrapea publicaciones recientes de perfiles o URLs específicas. Utiliza daysBack para filtrar por antigüedad.",
     body: JSON.stringify(
       {
         platform: "X",
         usernames: ["elonmusk"],
         postUrls: [],
-        daysBack: 3,
-        maxItems: 50,
+        daysBack: 7,
+        maxItems: 20,
       },
       null,
-      2
+      2,
     ),
     response: JSON.stringify(
       {
-        jobId: 2,
-        datasetId: "ds_e5f6g7h8",
-        status: "QUEUED",
-        platform: "X",
-        jobType: "POSTS",
-        createdAt: "2026-02-19T11:00:00Z",
+        message: "Job POSTS encolado",
+        totalProfiles: 1,
+        totalPostUrls: 0,
+        queued: 1,
+        failed: 0,
+        data: [{ status: "QUEUED", target: "batch", jobId: "ds_i9j0k1l2" }],
       },
       null,
-      2
+      2,
     ),
   },
   {
@@ -78,77 +79,104 @@ const ENDPOINTS: Endpoint[] = [
     path: "/api/scrape/comments",
     title: "Scrapear comentarios",
     description:
-      "Recibe plataforma y array de links de publicaciones, luego encola trabajos COMMENTS desacoplados por post.",
+      "Extrae comentarios de una o varias publicaciones. Recibe un array de URLs directas de los posts.",
     body: JSON.stringify(
       {
         platform: "TIKTOK",
-        postUrls: ["https://tiktok.com/@user/video/123"],
-        daysBack: 7,
+        postUrls: ["https://tiktok.com/@user/video/123456789"],
         maxItems: 100,
       },
       null,
-      2
+      2,
     ),
     response: JSON.stringify(
       {
-        jobId: 3,
-        datasetId: "ds_i9j0k1l2",
-        status: "QUEUED",
-        platform: "TIKTOK",
-        jobType: "COMMENTS",
-        createdAt: "2026-02-19T12:00:00Z",
+        message: "Jobs COMMENTS procesados",
+        total: 1,
+        queued: 1,
+        failed: 0,
+        data: [
+          {
+            status: "QUEUED",
+            target: "https://tiktok.com/...",
+            jobId: "ds_m3n4o5p6",
+          },
+        ],
       },
       null,
-      2
+      2,
     ),
   },
   {
     method: "POST",
     path: "/api/scrape/dataset",
-    title: "Obtener dataset",
+    title: "Obtener resultados (Dataset)",
     description:
-      "Devuelve todos los ítems scrapeados de un dataset como JSON (por jobId o datasetId).",
+      "Recupera los ítems scrapeados. Puedes consultar por jobId o por el datasetId generado.",
     body: JSON.stringify(
       {
-        jobId: 1,
-        datasetId: "ds_a1b2c3d4",
+        jobId: "ds_a1b2c3d4",
       },
       null,
-      2
+      2,
     ),
     response: JSON.stringify(
       {
         datasetId: "ds_a1b2c3d4",
-        jobId: 1,
-        items: [{ id: "item_1", data: {} }],
-        totalItems: 1,
+        jobId: "ds_a1b2c3d4",
+        totalItems: 42,
+        items: [
+          {
+            id: "item_1",
+            jobId: "ds_a1b2c3d4",
+            scrapedAt: "2026-02-20T18:00:00Z",
+            data: {
+              username: "nike",
+              followers: 250000000,
+              biography: "Just Do It.",
+            },
+          },
+        ],
       },
       null,
-      2
+      2,
     ),
   },
   {
     method: "POST",
-    path: "/api/scrape/job-status",
-    title: "Estado del trabajo",
-    description: "Consulta el estado y progreso actual de un trabajo específico.",
-    body: JSON.stringify({ jobId: 1 }, null, 2),
+    path: "/api/scrape/job-progress",
+    title: "Consultar progreso",
+    description:
+      "Obtiene un snapshot rápido del estado, progreso porcentual y métricas del trabajo.",
+    body: JSON.stringify({ jobId: "ds_a1b2c3d4" }, null, 2),
     response: JSON.stringify(
       {
-        jobId: 1,
-        datasetId: "ds_a1b2c3d4",
-        status: "COMPLETED",
+        jobId: "ds_a1b2c3d4",
         platform: "INSTAGRAM",
-        jobType: "PROFILE",
-        progress: 100,
-        totalItems: 5,
-        processedItems: 5,
-        createdAt: "2026-02-19T10:00:00Z",
-        updatedAt: "2026-02-19T10:02:30Z",
-        finishedAt: "2026-02-19T10:02:30Z",
+        type: "PROFILE",
+        status: "RUNNING",
+        progress: 45,
+        createdAt: "2026-02-20T19:00:00Z",
+        updatedAt: "2026-02-20T19:01:30Z",
       },
       null,
-      2
+      2,
+    ),
+  },
+  {
+    method: "POST",
+    path: "/api/scrape/stop",
+    title: "Cancelar ejecución",
+    description:
+      "Detiene inmediatamente un trabajo en ejecución y limpia la cola de procesos.",
+    body: JSON.stringify({ jobId: "ds_a1b2c3d4" }, null, 2),
+    response: JSON.stringify(
+      {
+        success: true,
+        message: "Trabajo detenido correctamente",
+      },
+      null,
+      2,
     ),
   },
 ];
@@ -193,7 +221,9 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
         <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
           {endpoint.method}
         </span>
-        <code className="font-mono text-sm text-foreground">{endpoint.path}</code>
+        <code className="font-mono text-sm text-foreground">
+          {endpoint.path}
+        </code>
       </div>
 
       {/* Description */}
@@ -209,7 +239,7 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
             "flex-1 px-5 py-2.5 text-xs font-medium transition-colors",
             activeTab === "request"
               ? "border-b-2 border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           Cuerpo del request
@@ -220,7 +250,7 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
             "flex-1 px-5 py-2.5 text-xs font-medium transition-colors",
             activeTab === "response"
               ? "border-b-2 border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           Respuesta

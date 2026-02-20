@@ -9,6 +9,7 @@ import type {
   DashboardSummaryResponse,
   DashboardJobsListRequest,
   DashboardDatasetsListRequest,
+  DatasetItem,
   DatasetRequest,
   DatasetResponse,
   Job,
@@ -29,7 +30,7 @@ type BackendJobType = "PROFILE" | "POSTS" | "COMMENTS";
 type BackendPlatform = "INSTAGRAM" | "FACEBOOK" | "TIKTOK" | "X";
 
 type BackendDashboardJob = {
-  id: number;
+  id: string;
   datasetId: string;
   platform: BackendPlatform;
   jobType: BackendJobType;
@@ -50,7 +51,7 @@ type BackendDashboardJob = {
 };
 
 type BatchQueueResponse = {
-  data?: Array<{ status: "QUEUED" | "ERROR"; jobId?: number }>;
+  data?: Array<{ status: "QUEUED" | "ERROR"; jobId?: string }>;
   message?: string;
 };
 
@@ -135,6 +136,35 @@ class ApiClient {
     }
   }
 
+  private async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error:
+            error.error ??
+            error.message ??
+            `Request failed (${response.status})`,
+        };
+      }
+
+      const data = (await response.json()) as T;
+      return { success: true, data };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      };
+    }
+  }
+
   private streamUrl(endpoint: string, query: Record<string, string | number>) {
     const qs = new URLSearchParams(
       Object.entries(query).map(([k, v]) => [k, String(v)]),
@@ -167,7 +197,7 @@ class ApiClient {
       success: true,
       data: {
         jobId: firstQueued.jobId,
-        datasetId: `job-${firstQueued.jobId}`,
+        datasetId: `ds_${firstQueued.jobId}`,
         status: JobStatusEnum.QUEUED,
         platform: payload.platform,
         jobType: JobTypeEnum.PROFILE,
@@ -201,7 +231,7 @@ class ApiClient {
       success: true,
       data: {
         jobId: firstQueued.jobId,
-        datasetId: `job-${firstQueued.jobId}`,
+        datasetId: `ds_${firstQueued.jobId}`,
         status: JobStatusEnum.QUEUED,
         platform: payload.platform,
         jobType: JobTypeEnum.POSTS,
@@ -235,19 +265,13 @@ class ApiClient {
       success: true,
       data: {
         jobId: firstQueued.jobId,
-        datasetId: `job-${firstQueued.jobId}`,
+        datasetId: `ds_${firstQueued.jobId}`,
         status: JobStatusEnum.QUEUED,
         platform: payload.platform,
         jobType: JobTypeEnum.COMMENTS,
         createdAt: new Date().toISOString(),
       },
     };
-  }
-
-  async getDataset(
-    payload: DatasetRequest,
-  ): Promise<ApiResponse<DatasetResponse>> {
-    return this.post<DatasetResponse>(API_CONFIG.endpoints.dataset, payload);
   }
 
   async getJobStatus(
@@ -319,7 +343,7 @@ class ApiClient {
     };
   }
 
-  async getDashboardJobDetail(jobId: number): Promise<ApiResponse<Job>> {
+  async getDashboardJobDetail(jobId: string): Promise<ApiResponse<Job>> {
     const response = await this.post<BackendDashboardJob>(
       API_CONFIG.endpoints.dashboardJobDetail,
       { jobId },
@@ -331,7 +355,7 @@ class ApiClient {
   }
 
   openDashboardJobStream(
-    jobId: number,
+    jobId: string,
     handlers: {
       onProgress: (job: Job) => void;
       onDone?: (job: Job) => void;
@@ -356,22 +380,93 @@ class ApiClient {
       handlers.onDone?.(mapBackendJob(payload));
     });
 
-    source.addEventListener("error", (event) => {
-      try {
-        const payload = JSON.parse((event as MessageEvent).data) as {
-          error?: string;
-        };
-        handlers.onError?.(payload.error ?? "Stream error");
-      } catch {
-        handlers.onError?.("Stream error");
+    source.addEventListener("error", (event: MessageEvent) => {
+      if (event.data) {
+        try {
+          const payload = JSON.parse(event.data) as {
+            error?: string;
+          };
+          handlers.onError?.(payload.error ?? "Stream error");
+        } catch {
+          // Si no es JSON, ignoramos para que no explote
+        }
       }
     });
 
     source.onerror = () => {
-      handlers.onError?.("No se pudo mantener la conexión en tiempo real");
+      // EventSource readyState: 0=CONNECTING, 1=OPEN, 2=CLOSED
+      if (source.readyState === 2) {
+        handlers.onError?.("Se cerró la conexión en tiempo real");
+      }
+      // Cuando es 0 (CONNECTING), es que está intentando reconectar automáticamente.
+      // No mandamos error para no llenar la pantalla de toasts.
     };
 
     return source;
+  }
+
+  async getDataset(params: { jobId?: string; datasetId: string }): Promise<
+    ApiResponse<
+      DatasetResponse & {
+        jobId?: string;
+        datasetId?: string;
+        items: DatasetItem[];
+      }
+    >
+  > {
+    const response = await this.post<{
+      jobId?: string;
+      datasetId?: string;
+      items: any[];
+    }>(API_CONFIG.endpoints.dataset, {
+      jobId: params.jobId,
+      datasetId: params.datasetId,
+    });
+
+    if (!response.success || !response.data) {
+      return { success: false, error: response.error };
+    }
+
+    // Normalize items: move non-metadata fields into .data
+    const metadataKeys = [
+      "id",
+      "jobId",
+      "scrapedAt",
+      "url",
+      "platform",
+      "type",
+    ];
+    const items: DatasetItem[] = response.data.items.map((item, index) => {
+      const data: Record<string, unknown> = {};
+      Object.keys(item).forEach((key) => {
+        if (!metadataKeys.includes(key)) {
+          data[key] = item[key];
+        }
+      });
+
+      return {
+        id: item.id || `item-${index}`,
+        jobId: (item.jobId ||
+          params.jobId ||
+          params.datasetId.replace("ds_", "")) as string,
+        scrapedAt: item.scrapedAt || new Date().toISOString(),
+        data,
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        ...response.data,
+        items,
+        totalItems: items.length,
+        jobId:
+          response.data.jobId ??
+          params.jobId ??
+          String(params.datasetId.replace("ds_", "")),
+        datasetId: response.data.datasetId ?? params.datasetId ?? "",
+      },
+    };
   }
 
   async listDashboardDatasets(
@@ -395,13 +490,13 @@ class ApiClient {
     };
   }
 
-  async stopJob(jobId: number): Promise<ApiResponse<{ success: true }>> {
+  async stopJob(jobId: string): Promise<ApiResponse<{ success: true }>> {
     return this.post<{ success: true }>(API_CONFIG.endpoints.stopJob, {
       jobId,
     });
   }
 
-  async deleteJob(jobId: number): Promise<ApiResponse<{ success: true }>> {
+  async deleteJob(jobId: string): Promise<ApiResponse<{ success: true }>> {
     return this.post<{ success: true }>(API_CONFIG.endpoints.deleteJob, {
       jobId,
     });

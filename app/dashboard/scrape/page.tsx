@@ -8,7 +8,7 @@ export default function ScrapePage() {
         title="Nuevo scraping"
         description="Configura y lanza una nueva ejecución de scraping."
       />
-      <div className="mx-auto w-full max-w-3xl p-6">
+      <div className="mx-auto w-full max-w-5xl p-6">
         <ScrapeForm />
       </div>
     </div>

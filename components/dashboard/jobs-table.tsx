@@ -27,9 +27,9 @@ export function JobsTable({
   compact = false,
   onRefresh,
 }: JobsTableProps) {
-  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const handleStop = async (jobId: number) => {
+  const handleStop = async (jobId: string) => {
     setProcessingId(jobId);
     try {
       const res = await apiClient.stopJob(jobId);
@@ -55,7 +55,7 @@ export function JobsTable({
     }
   };
 
-  const handleDelete = async (jobId: number) => {
+  const handleDelete = async (jobId: string) => {
     if (!confirm("¿Seguro que deseas eliminar esta ejecución?")) return;
     setProcessingId(jobId);
     try {

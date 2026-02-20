@@ -14,7 +14,7 @@ import {
   Zap,
   HardDrive,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { APP_CONFIG } from "@/config/constants";
 import { cn } from "@/lib/utils";
@@ -53,18 +53,53 @@ const USAGE_STATS = {
 /* ─── Components ───────────────────────────────────────────── */
 
 export function DashboardSidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
-    <aside className="hidden h-screen border-r border-border/40 bg-card/80 backdrop-blur-md md:flex md:w-[240px]">
-      <SidebarContent />
+    <aside
+      className={cn(
+        "hidden h-screen border-r border-border/40 bg-card/80 backdrop-blur-md transition-[width] duration-300 ease-in-out md:flex",
+        collapsed ? "md:w-[60px]" : "md:w-[240px]",
+      )}
+    >
+      <SidebarContent collapsed={collapsed} onCollapsedChange={setCollapsed} />
     </aside>
   );
 }
 
-export function SidebarContent({ onSelect }: { onSelect?: () => void }) {
+export function SidebarContent({
+  onSelect,
+  hideCollapseControl = false,
+  collapsed: collapsedProp,
+  onCollapsedChange,
+}: {
+  onSelect?: () => void;
+  hideCollapseControl?: boolean;
+  collapsed?: boolean;
+  onCollapsedChange?: (next: boolean) => void;
+}) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const { user } = useUser();
   const { activeJobs, isScraping } = useJobMonitor();
+  const shouldHideCollapseControl = hideCollapseControl && isMobileViewport;
+  const collapsed =
+    typeof collapsedProp === "boolean" ? collapsedProp : internalCollapsed;
+  const setCollapsed =
+    onCollapsedChange ??
+    ((next: boolean) => {
+      setInternalCollapsed(next);
+    });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobileViewport(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
 
   const isActive = (href: string) =>
     href === "/dashboard"
@@ -220,8 +255,8 @@ export function SidebarContent({ onSelect }: { onSelect?: () => void }) {
           </div>
         )}
 
-        {/* ── Usage Stats ────────────────────────────────── */}
-        {!collapsed && (
+        {/* Usage Stats (Commented out until implemented) */}
+        {/* !collapsed && (
           <div className="flex flex-col gap-2.5 border-t border-border/30 px-4 py-3">
             {Object.values(USAGE_STATS).map((stat) => {
               const pct = Math.round((stat.used / stat.total) * 100);
@@ -246,9 +281,10 @@ export function SidebarContent({ onSelect }: { onSelect?: () => void }) {
               );
             })}
           </div>
-        )}
+        ) */}
 
-        {collapsed && (
+        {/* Collapsed stats (Commented out until implemented) */}
+        {/* collapsed && (
           <div className="flex flex-col items-center gap-2 border-t border-border/30 px-2 py-3">
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -292,7 +328,7 @@ export function SidebarContent({ onSelect }: { onSelect?: () => void }) {
               </TooltipContent>
             </Tooltip>
           </div>
-        )}
+        ) */}
 
         {/* ── Bottom: Logo + Collapse ────────────────────── */}
         <div className="flex items-center justify-between border-t border-border/30 px-3 py-2.5">
@@ -306,13 +342,15 @@ export function SidebarContent({ onSelect }: { onSelect?: () => void }) {
                   {APP_CONFIG.name}
                 </span>
               </Link>
-              <button
-                onClick={() => setCollapsed(true)}
-                className="flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-foreground/4 hover:text-foreground"
-                aria-label="Colapsar barra lateral"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
+              {!shouldHideCollapseControl && (
+                <button
+                  onClick={() => setCollapsed(true)}
+                  className="flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-foreground/4 hover:text-foreground"
+                  aria-label="Colapsar barra lateral"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+              )}
             </>
           ) : (
             <div className="flex w-full flex-col items-center gap-2">
@@ -321,20 +359,22 @@ export function SidebarContent({ onSelect }: { onSelect?: () => void }) {
                   <span className="text-[10px] font-bold">SC</span>
                 </div>
               </Link>
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => setCollapsed(false)}
-                    className="flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-foreground/4 hover:text-foreground"
-                    aria-label="Expandir barra lateral"
-                  >
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={12}>
-                  <p className="text-xs">Expandir</p>
-                </TooltipContent>
-              </Tooltip>
+              {!shouldHideCollapseControl && (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setCollapsed(false)}
+                      className="flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-foreground/4 hover:text-foreground"
+                      aria-label="Expandir barra lateral"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={12}>
+                    <p className="text-xs">Expandir</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
           )}
         </div>

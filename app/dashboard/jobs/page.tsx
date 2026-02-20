@@ -6,6 +6,13 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { JobsTable } from "@/components/dashboard/jobs-table";
 import { apiClient } from "@/lib/api";
 import { JobStatus, Platform, JobType, type Job } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const STATUS_OPTIONS = [
   { label: "Todos los estados", value: "ALL" },
@@ -152,16 +159,24 @@ interface FilterSelectProps {
 
 function FilterSelect({ options, value, onChange }: FilterSelectProps) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-8 w-full cursor-pointer rounded-lg border border-border/40 bg-secondary/40 px-3 pr-8 text-[13px] text-foreground transition-all duration-200 focus:border-primary/40 focus:bg-secondary/60 focus:outline-none focus:ring-1 focus:ring-primary/20 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239ca3af%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-position-[right_8px_center] bg-no-repeat sm:w-auto"
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger
+        size="sm"
+        className="h-8 w-full cursor-pointer rounded-lg border-border/40 bg-secondary/40 text-[13px] text-foreground shadow-none transition-all duration-200 focus:ring-1 focus:ring-primary/20 sm:w-[190px]"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="rounded-lg border-border/50 bg-popover/95 backdrop-blur-xl">
+        {options.map((opt) => (
+          <SelectItem
+            key={opt.value}
+            value={opt.value}
+            className="cursor-pointer text-[13px] data-[state=checked]:bg-primary/12 data-[state=checked]:text-primary"
+          >
+            {opt.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

@@ -60,7 +60,10 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
               <SheetTitle>Menú de navegación</SheetTitle>
             </SheetHeader>
             <div className="h-full pt-4">
-              <SidebarContent onSelect={() => setIsMobileMenuOpen(false)} />
+              <SidebarContent
+                onSelect={() => setIsMobileMenuOpen(false)}
+                hideCollapseControl
+              />
             </div>
           </SheetContent>
         </Sheet>
@@ -90,7 +93,7 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="relative h-8 w-8 text-muted-foreground transition-all hover:bg-foreground/5 hover:text-foreground active:scale-95"
+              className="relative h-8 w-8 rounded-lg border border-border/50 text-muted-foreground transition-all hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground active:scale-95"
               aria-label="Notificaciones"
             >
               <Bell className="h-4 w-4" />

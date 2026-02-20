@@ -33,7 +33,13 @@
   --accent-foreground: #0a0a0a;
 
   --destructive: #dc2626;
-  --destructive-foreground: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --success: #10b981;
+  --success-foreground: #ffffff;
+
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
 
   --border: #e5e5e5;
   --input: #e5e5e5;
@@ -58,6 +64,14 @@
 
   --glow-blue: 84, 119, 146;
   --surface-elevated: #ffffff;
+
+  /* Sileo Toast Tokens */
+  --sileo-fill: #f5f5f5;
+  --sileo-state-success: #10b981;
+  --sileo-state-error: #dc2626;
+  --sileo-state-warning: #f59e0b;
+  --sileo-state-info: #547792;
+  --sileo-state-action: #547792;
 }
 
 /* ─── Clerk (Auth) Theme Overrides ─────────────────────────── */
@@ -203,6 +217,12 @@
   --destructive: #7f1d1d;
   --destructive-foreground: #fca5a5;
 
+  --success: #064e3b;
+  --success-foreground: #6ee7b7;
+
+  --warning: #422006;
+  --warning-foreground: #fcd34d;
+
   --border: #1f1f1f;
   --input: #1f1f1f;
   --ring: #547792;
@@ -224,6 +244,14 @@
 
   --glow-blue: 107, 146, 176;
   --surface-elevated: #0a0a0a;
+
+  /* Sileo Toast Tokens (Dark) */
+  --sileo-fill: #141414;
+  --sileo-state-success: #059669;
+  --sileo-state-error: #b91c1c;
+  --sileo-state-warning: #d97706;
+  --sileo-state-info: #6b92b0;
+  --sileo-state-action: #6b92b0;
 }
 
 @theme inline {
@@ -617,5 +645,32 @@
   @keyframes pulse-ring {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
+  }
+
+  /* ─── Toast Enhancements (Sonner/Sileo) ──────────────────── */
+  [data-sonner-toast] {
+    --radius: 0.75rem !important;
+    border: 1px solid var(--border) !important;
+    backdrop-filter: blur(12px) !important;
+    font-family: var(--font-sans) !important;
+  }
+
+  [data-sonner-toast][data-type="success"] {
+    background: var(--success) !important;
+    color: var(--success-foreground) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  [data-sonner-toast][data-type="error"],
+  [data-sonner-toast][data-type="destructive"] {
+    background: var(--destructive) !important;
+    color: var(--destructive-foreground) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  [data-sonner-toast][data-type="warning"] {
+    background: var(--warning) !important;
+    color: var(--warning-foreground) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
   }
 }

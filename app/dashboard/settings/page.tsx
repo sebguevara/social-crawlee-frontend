@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
+import { sileo } from "sileo";
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -27,18 +27,21 @@ export default function SettingsPage() {
         lastName,
         username,
       });
-      toast.success("Perfil actualizado", {
+      sileo.success({
+        title: "Perfil actualizado",
         description: "Tus datos fueron guardados correctamente.",
       });
     } catch {
-      toast.error("Error al guardar", {
+      sileo.error({
+        title: "Error al guardar",
         description: "No se pudieron actualizar los datos. Intenta de nuevo.",
       });
     }
   };
 
   const handleSavePreferences = () => {
-    toast.success("Preferencias guardadas", {
+    sileo.success({
+      title: "Preferencias guardadas",
       description: "Tu configuración fue actualizada.",
     });
   };

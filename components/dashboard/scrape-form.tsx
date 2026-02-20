@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Send } from "lucide-react";
+import { Rocket, Plus, Trash2 } from "lucide-react";
 import {
   SiInstagram,
   SiFacebook,
@@ -32,24 +32,58 @@ const PLATFORM_ICONS: Record<Platform, React.ElementType> = {
   [Platform.TIKTOK]: SiTiktok,
 };
 
-function validateForm(state: ScrapeFormState): ScrapeFormErrors {
-  const errors: ScrapeFormErrors = {};
-  const config = JOB_TYPES[state.jobType];
+function parseTokenList(raw: string): string[] {
+  return raw
+    .split(/[\s,]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
 
-  if (config.requiresUsernames && !state.usernames.trim()) {
-    errors.usernames = "Se requiere al menos un usuario.";
+function parseManualList(values: string[]): string[] {
+  return values.map((value) => value.trim()).filter(Boolean);
+}
+
+function validateFormWithLists(
+  state: ScrapeFormState,
+  input: { usernames: string[]; postUrls: string[] },
+): ScrapeFormErrors {
+  const errors: ScrapeFormErrors = {};
+  const usernamesCount = input.usernames.length;
+  const postUrlsCount = input.postUrls.length;
+
+  if (state.jobType === JobType.PROFILE && usernamesCount === 0) {
+    errors.usernames = "Ingresa al menos un usuario para continuar.";
   }
+
+  if (state.jobType === JobType.POSTS) {
+    const hasUsernames = usernamesCount > 0;
+    const hasPostUrls = postUrlsCount > 0;
+
+    if (hasUsernames && hasPostUrls) {
+      errors.usernames = "Elige una sola opción: usuarios o URLs.";
+      errors.postUrls = "Elige una sola opción: usuarios o URLs.";
+    }
+
+    if (!hasUsernames && !hasPostUrls) {
+      errors.usernames = "Ingresa usuarios o URLs para continuar.";
+      errors.postUrls = "Ingresa usuarios o URLs para continuar.";
+    }
+  }
+
+  if (state.jobType === JobType.COMMENTS && postUrlsCount === 0) {
+    errors.postUrls = "Ingresa al menos una URL de publicación.";
+  }
+
   if (
-    config.requiresPostUrls &&
-    state.jobType === JobType.COMMENTS &&
-    !state.postUrls.trim()
+    state.jobType !== JobType.PROFILE &&
+    (state.maxItems < 1 || state.maxItems > 1000)
   ) {
-    errors.postUrls = "Se requiere al menos una URL de publicación.";
-  }
-  if (state.maxItems < 1 || state.maxItems > 1000) {
     errors.maxItems = "El máximo de ítems debe estar entre 1 y 1000.";
   }
-  if (config.requiresDaysBack && (state.daysBack < 1 || state.daysBack > 365)) {
+  if (
+    state.jobType !== JobType.PROFILE &&
+    (state.daysBack < 1 || state.daysBack > 365)
+  ) {
     errors.daysBack = "Los días hacia atrás deben estar entre 1 y 365.";
   }
 
@@ -71,8 +105,54 @@ export function ScrapeForm() {
   });
 
   const [errors, setErrors] = useState<ScrapeFormErrors>({});
+  const [usernamesMode, setUsernamesMode] = useState<"manual" | "bulk">(
+    "manual",
+  );
+  const [usernamesManual, setUsernamesManual] = useState<string[]>([""]);
+  const [usernamesBulk, setUsernamesBulk] = useState("");
+  const [postUrlsMode, setPostUrlsMode] = useState<"manual" | "bulk">("manual");
+  const [postUrlsManual, setPostUrlsManual] = useState<string[]>([""]);
+  const [postUrlsBulk, setPostUrlsBulk] = useState("");
+  const [hasInteractedPostsInputs, setHasInteractedPostsInputs] =
+    useState(false);
 
   const config = JOB_TYPES[form.jobType];
+  const usernames =
+    usernamesMode === "manual"
+      ? parseManualList(usernamesManual)
+      : parseTokenList(usernamesBulk);
+  const postUrls =
+    postUrlsMode === "manual"
+      ? parseManualList(postUrlsManual)
+      : parseTokenList(postUrlsBulk);
+  const liveValidationErrors = validateFormWithLists(form, {
+    usernames,
+    postUrls,
+  });
+  const canSubmit = Object.keys(liveValidationErrors).length === 0;
+  const executionBlockReason =
+    form.jobType === JobType.POSTS && usernames.length > 0 && postUrls.length > 0
+      ? "En publicaciones no puedes cargar usuarios y urls al mismo tiempo."
+      : null;
+  const sileoBlockReason =
+    form.jobType === JobType.POSTS && usernames.length > 0 && postUrls.length > 0
+      ? "En publicaciones no puedes cargar usuarios y urls al mismo tiempo."
+      : null;
+  const lastPostsWarningRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (form.jobType !== JobType.POSTS) {
+      lastPostsWarningRef.current = null;
+      return;
+    }
+    if (!hasInteractedPostsInputs || !sileoBlockReason) return;
+    if (lastPostsWarningRef.current === sileoBlockReason) return;
+    lastPostsWarningRef.current = sileoBlockReason;
+    sileo.warning({
+      title: "Error de validación",
+      description: sileoBlockReason,
+    });
+  }, [form.jobType, sileoBlockReason, hasInteractedPostsInputs]);
 
   const updateField = useCallback(
     <K extends keyof ScrapeFormState>(key: K, value: ScrapeFormState[K]) => {
@@ -83,7 +163,10 @@ export function ScrapeForm() {
   );
 
   const handleSubmit = async () => {
-    const validationErrors = validateForm(form);
+    const validationErrors = validateFormWithLists(form, {
+      usernames,
+      postUrls,
+    });
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -92,15 +175,6 @@ export function ScrapeForm() {
     setLoading(true);
 
     try {
-      const usernames = form.usernames
-        .split(/[,\n]/)
-        .map((u) => u.trim())
-        .filter(Boolean);
-      const postUrls = form.postUrls
-        .split(/[,\n]/)
-        .map((u) => u.trim())
-        .filter(Boolean);
-
       let result;
 
       switch (form.jobType) {
@@ -108,7 +182,6 @@ export function ScrapeForm() {
           result = await apiClient.scrapeProfiles({
             platform: form.platform,
             usernames,
-            maxItems: form.maxItems,
           });
           break;
         case JobType.POSTS:
@@ -221,18 +294,90 @@ export function ScrapeForm() {
           <Label className="text-sm font-medium text-foreground">
             Usuarios
           </Label>
-          <Textarea
-            placeholder="Ingresa usuarios, uno por línea o separados por coma..."
-            value={form.usernames}
-            onChange={(e) => updateField("usernames", e.target.value)}
-            rows={4}
-            className="resize-none bg-card font-mono text-sm"
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={usernamesMode === "manual" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setUsernamesMode("manual")}
+            >
+              Manual
+            </Button>
+            <Button
+              type="button"
+              variant={usernamesMode === "bulk" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setUsernamesMode("bulk")}
+            >
+              Lote
+            </Button>
+          </div>
+          {usernamesMode === "manual" ? (
+            <div className="flex flex-col gap-2">
+              {usernamesManual.map((value, index) => (
+                <div
+                  key={`username-${index}`}
+                  className="flex items-center gap-2"
+                >
+                  <Input
+                    value={value}
+                    onChange={(e) => {
+                      const next = [...usernamesManual];
+                      next[index] = e.target.value;
+                      setUsernamesManual(next);
+                      setHasInteractedPostsInputs(true);
+                      setErrors((prev) => ({ ...prev, usernames: undefined }));
+                    }}
+                    placeholder="@usuario"
+                    className="bg-card font-mono text-sm"
+                  />
+                  {usernamesManual.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => {
+                        const next = usernamesManual.filter(
+                          (_, i) => i !== index,
+                        );
+                        setUsernamesManual(next.length > 0 ? next : [""]);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit gap-1.5"
+                onClick={() => setUsernamesManual((prev) => [...prev, ""])}
+              >
+                <Plus className="h-4 w-4" />
+                Agregar usuario
+              </Button>
+            </div>
+          ) : (
+            <Textarea
+              placeholder="Pega usuarios separados por comas, espacios o saltos de línea..."
+              value={usernamesBulk}
+              onChange={(e) => {
+                setUsernamesBulk(e.target.value);
+                setHasInteractedPostsInputs(true);
+                setErrors((prev) => ({ ...prev, usernames: undefined }));
+              }}
+              rows={4}
+              className="resize-none bg-card font-mono text-sm"
+            />
+          )}
           {errors.usernames && (
             <p className="text-xs text-red-500">{errors.usernames}</p>
           )}
           <p className="text-xs text-muted-foreground">
-            Separa múltiples usuarios con comas o saltos de línea.
+            Cargá uno por input o pega varios con comas, espacios o saltos de
+            línea.
           </p>
         </div>
       )}
@@ -243,16 +388,87 @@ export function ScrapeForm() {
           <Label className="text-sm font-medium text-foreground">
             Post URLs{" "}
             {form.jobType === JobType.POSTS && (
-              <span className="text-muted-foreground">(opcional)</span>
+              <span className="text-muted-foreground"></span>
             )}
           </Label>
-          <Textarea
-            placeholder="Ingresa URLs de publicaciones, una por línea..."
-            value={form.postUrls}
-            onChange={(e) => updateField("postUrls", e.target.value)}
-            rows={4}
-            className="resize-none bg-card font-mono text-sm"
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={postUrlsMode === "manual" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPostUrlsMode("manual")}
+            >
+              Manual
+            </Button>
+            <Button
+              type="button"
+              variant={postUrlsMode === "bulk" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setPostUrlsMode("bulk")}
+            >
+              Lote
+            </Button>
+          </div>
+          {postUrlsMode === "manual" ? (
+            <div className="flex flex-col gap-2">
+              {postUrlsManual.map((value, index) => (
+                <div
+                  key={`post-url-${index}`}
+                  className="flex items-center gap-2"
+                >
+                  <Input
+                    value={value}
+                    onChange={(e) => {
+                      const next = [...postUrlsManual];
+                      next[index] = e.target.value;
+                      setPostUrlsManual(next);
+                      setHasInteractedPostsInputs(true);
+                      setErrors((prev) => ({ ...prev, postUrls: undefined }));
+                    }}
+                    placeholder="https://..."
+                    className="bg-card font-mono text-sm"
+                  />
+                  {postUrlsManual.length > 1 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => {
+                        const next = postUrlsManual.filter(
+                          (_, i) => i !== index,
+                        );
+                        setPostUrlsManual(next.length > 0 ? next : [""]);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-fit gap-1.5"
+                onClick={() => setPostUrlsManual((prev) => [...prev, ""])}
+              >
+                <Plus className="h-4 w-4" />
+                Agregar URL
+              </Button>
+            </div>
+          ) : (
+            <Textarea
+              placeholder="Pega URLs separadas por comas, espacios o saltos de línea..."
+              value={postUrlsBulk}
+              onChange={(e) => {
+                setPostUrlsBulk(e.target.value);
+                setHasInteractedPostsInputs(true);
+                setErrors((prev) => ({ ...prev, postUrls: undefined }));
+              }}
+              rows={4}
+              className="resize-none bg-card font-mono text-sm"
+            />
+          )}
           {errors.postUrls && (
             <p className="text-xs text-red-500">{errors.postUrls}</p>
           )}
@@ -260,27 +476,26 @@ export function ScrapeForm() {
       )}
 
       {/* Numeric inputs */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label className="text-sm font-medium text-foreground">
-            Máximo de ítems
-          </Label>
-          <Input
-            type="number"
-            min={1}
-            max={1000}
-            value={form.maxItems}
-            onChange={(e) =>
-              updateField("maxItems", parseInt(e.target.value) || 1)
-            }
-            className="bg-card font-mono"
-          />
-          {errors.maxItems && (
-            <p className="text-xs text-red-500">{errors.maxItems}</p>
-          )}
-        </div>
-
-        {config.requiresDaysBack && (
+      {form.jobType !== JobType.PROFILE && (
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label className="text-sm font-medium text-foreground">
+              Máximo de ítems
+            </Label>
+            <Input
+              type="number"
+              min={1}
+              max={1000}
+              value={form.maxItems}
+              onChange={(e) =>
+                updateField("maxItems", parseInt(e.target.value) || 1)
+              }
+              className="bg-card font-mono"
+            />
+            {errors.maxItems && (
+              <p className="text-xs text-red-500">{errors.maxItems}</p>
+            )}
+          </div>
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-medium text-foreground">
               Días hacia atrás
@@ -299,8 +514,8 @@ export function ScrapeForm() {
               <p className="text-xs text-red-500">{errors.daysBack}</p>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Preview */}
       <div className="rounded-xl border border-border/50 bg-[#0a0a0b] p-5">
@@ -311,24 +526,20 @@ export function ScrapeForm() {
           {JSON.stringify(
             {
               platform: form.platform,
-              ...(config.requiresUsernames && form.usernames.trim()
+              ...(config.requiresUsernames && usernames.length > 0
                 ? {
-                    usernames: form.usernames
-                      .split(/[,\n]/)
-                      .map((u) => u.trim())
-                      .filter(Boolean),
+                    usernames,
                   }
                 : {}),
-              ...(config.requiresPostUrls && form.postUrls.trim()
+              ...(config.requiresPostUrls && postUrls.length > 0
                 ? {
-                    postUrls: form.postUrls
-                      .split(/[,\n]/)
-                      .map((u) => u.trim())
-                      .filter(Boolean),
+                    postUrls,
                   }
                 : {}),
               ...(config.requiresDaysBack ? { daysBack: form.daysBack } : {}),
-              maxItems: form.maxItems,
+              ...(form.jobType !== JobType.PROFILE
+                ? { maxItems: form.maxItems }
+                : {}),
             },
             null,
             2,
@@ -337,15 +548,22 @@ export function ScrapeForm() {
       </div>
 
       {/* Submit */}
-      <Button
-        size="lg"
-        onClick={handleSubmit}
-        disabled={loading}
-        className="btn-primary-glow w-full gap-2 text-primary-foreground sm:w-auto sm:self-end"
-      >
-        <Send className="h-4 w-4" />
-        {loading ? "Creando ejecución..." : "Iniciar scraping"}
-      </Button>
+      <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+        {executionBlockReason && (
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            {executionBlockReason}
+          </p>
+        )}
+        <Button
+          size="lg"
+          onClick={handleSubmit}
+          disabled={loading || !canSubmit}
+          className="btn-primary-glow w-full gap-2 text-primary-foreground sm:w-auto"
+        >
+          {loading ? "Creando ejecución..." : "Iniciar scraping"}
+          <Rocket className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }

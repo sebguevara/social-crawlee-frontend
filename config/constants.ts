@@ -112,7 +112,7 @@ export const JOB_TYPES: Record<JobType, JobTypeConfig> = {
     key: JobType.PROFILE,
     label: "Perfiles",
     description:
-      "Scrapea datos de perfil incluyendo bio, seguidores y métricas.",
+      "Scrapea datos de un perfil incluyendo bio, seguidores, seguidos y más.",
     requiresUsernames: true,
     requiresPostUrls: false,
     requiresDaysBack: false,
@@ -120,8 +120,7 @@ export const JOB_TYPES: Record<JobType, JobTypeConfig> = {
   [JobType.POSTS]: {
     key: JobType.POSTS,
     label: "Publicaciones",
-    description:
-      "Scrapea publicaciones por usuario o enlaces directos con métricas.",
+    description: "Scrapea publicaciones por usuario o enlaces directos.",
     requiresUsernames: true,
     requiresPostUrls: true,
     requiresDaysBack: true,

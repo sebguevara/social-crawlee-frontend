@@ -10,7 +10,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       <button
         className={cn(
           "flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 text-muted-foreground",
-          className
+          className,
         )}
         aria-label="Toggle theme"
       >
@@ -31,14 +31,14 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     );
   }
 
-  const isDark = theme === "dark";
+  const isDark = resolvedTheme === "dark";
 
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className={cn(
         "flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground",
-        className
+        className,
       )}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >

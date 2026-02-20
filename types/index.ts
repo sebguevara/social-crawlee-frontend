@@ -30,7 +30,6 @@ export enum JobStatus {
 export interface ScrapeProfilesRequest {
   platform: Platform;
   usernames: string[];
-  maxItems: number;
 }
 
 export interface ScrapePostsRequest {
@@ -49,12 +48,12 @@ export interface ScrapeCommentsRequest {
 }
 
 export interface DatasetRequest {
-  jobId?: number;
+  jobId?: string;
   datasetId?: string;
 }
 
 export interface JobStatusRequest {
-  jobId: number;
+  jobId: string;
 }
 
 // ─── API Response Types ──────────────────────────────────────
@@ -79,7 +78,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface JobCreatedResponse {
-  jobId: number;
+  jobId: string;
   datasetId: string;
   status: JobStatus;
   platform: Platform;
@@ -88,7 +87,7 @@ export interface JobCreatedResponse {
 }
 
 export interface JobStatusResponse {
-  jobId: number;
+  jobId: string;
   datasetId: string;
   status: JobStatus;
   platform: Platform;
@@ -104,7 +103,7 @@ export interface JobStatusResponse {
 
 export interface DatasetResponse {
   datasetId: string;
-  jobId: number;
+  jobId: string;
   items: DatasetItem[];
   totalItems: number;
 }
@@ -112,7 +111,7 @@ export interface DatasetResponse {
 // ─── Domain Models ───────────────────────────────────────────
 
 export interface Job {
-  id: number;
+  id: string;
   datasetId: string;
   platform: Platform;
   jobType: JobType;
@@ -131,12 +130,12 @@ export interface JobInput {
   usernames?: string[];
   postUrls?: string[];
   daysBack?: number;
-  maxItems: number;
+  maxItems?: number;
 }
 
 export interface DatasetItem {
   id: string;
-  jobId: number;
+  jobId: string;
   data: Record<string, unknown>;
   scrapedAt: string;
 }

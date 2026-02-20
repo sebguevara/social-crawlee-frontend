@@ -94,7 +94,7 @@ export default function DatasetsPage() {
     });
   };
 
-  const handleExport = async (jobId: number, datasetId: string) => {
+  const handleExport = async (jobId: string, datasetId: string) => {
     const result = await apiClient.getDataset({ jobId, datasetId });
     if (!result.success || !result.data) {
       sileo.error({
@@ -104,8 +104,8 @@ export default function DatasetsPage() {
       return;
     }
 
-    const rows = result.data.items.map(mapDatasetItemToCsvRow);
-    if (rows.length === 0) {
+    const normalizedRows = result.data.items.map(mapDatasetItemToCsvRow);
+    if (normalizedRows.length === 0) {
       sileo.warning({
         title: "Dataset vacío",
         description: "Este dataset no contiene registros para exportar.",
@@ -113,17 +113,37 @@ export default function DatasetsPage() {
       return;
     }
 
+    // Ensure all rows have all keys for CSV consistency
+    const allKeys = Array.from(
+      new Set(normalizedRows.flatMap((row) => Object.keys(row))),
+    );
+    const rows = normalizedRows.map((row) => {
+      const fullRow: CsvRow = {};
+      allKeys.forEach((key) => {
+        fullRow[key] = row[key] !== undefined ? row[key] : null;
+      });
+      return fullRow;
+    });
+
     const config = mkConfig({
-      filename: `${datasetId}`,
+      filename: `${datasetId}`.replace(/[^a-z0-9]/gi, "_"),
       useKeysAsHeaders: true,
     });
 
-    const csv = generateCsv(config)(rows);
-    download(config)(csv);
-    sileo.success({
-      title: "Exportación exitosa",
-      description: `Se ha descargado el archivo CSV para el dataset ${datasetId}.`,
-    });
+    try {
+      const csv = generateCsv(config)(rows);
+      download(config)(csv);
+      sileo.success({
+        title: "Exportación exitosa",
+        description: `Se ha descargado el archivo CSV para el dataset ${datasetId}.`,
+      });
+    } catch (err) {
+      console.error("Export error:", err);
+      sileo.error({
+        title: "Error al generar CSV",
+        description: "Hubo un problema al procesar los datos para la descarga.",
+      });
+    }
   };
 
   return (
@@ -150,68 +170,85 @@ export default function DatasetsPage() {
           {datasets.map((job) => (
             <div
               key={job.datasetId}
-              className="group flex flex-col gap-4 rounded-xl border border-border/50 bg-card p-5 transition-all hover:border-primary/20"
+              className="group relative flex flex-col gap-4 rounded-xl border border-border/50 bg-card p-5 transition-all hover:border-primary/20"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Database className="h-4 w-4 text-primary" />
-                  <span className="font-mono text-sm font-medium text-foreground">
-                    {job.datasetId}
+              {/* Overlay Link to Dataset Results */}
+              <Link
+                href={`/dashboard/datasets/${job.datasetId ?? `ds_${job.id}`}`}
+                className="absolute inset-0 z-0"
+                aria-label="Ver resultados"
+              />
+
+              {/* Content - need to be above the overlay link for buttons to work */}
+              <div className="relative z-10 flex flex-col gap-4 pointer-events-none">
+                {/* Header */}
+                <div className="flex items-center justify-between pointer-events-auto">
+                  <div className="flex items-center gap-2">
+                    <Database className="h-4 w-4 text-primary" />
+                    <span className="font-mono text-sm font-medium text-foreground">
+                      {job.datasetId}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleCopy(job.datasetId);
+                    }}
+                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label="Copiar ID del dataset"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {/* Badges */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <PlatformBadge platform={job.platform} />
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+                    {getJobTypeLabel(job.jobType)}
+                  </span>
+                  <StatusBadge status={job.status} />
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                  <span>
+                    <strong className="text-foreground">
+                      {job.processedItems}
+                    </strong>{" "}
+                    ítems
+                  </span>
+                  <span>
+                    {formatRelativeTime(job.finishedAt ?? job.updatedAt)}
                   </span>
                 </div>
-                <button
-                  onClick={() => handleCopy(job.datasetId)}
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label="Copiar ID del dataset"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              {/* Badges */}
-              <div className="flex flex-wrap items-center gap-2">
-                <PlatformBadge platform={job.platform} />
-                <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
-                  {getJobTypeLabel(job.jobType)}
-                </span>
-                <StatusBadge status={job.status} />
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <span>
-                  <strong className="text-foreground">
-                    {job.processedItems}
-                  </strong>{" "}
-                  ítems
-                </span>
-                <span>
-                  {formatRelativeTime(job.finishedAt ?? job.updatedAt)}
-                </span>
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center">
+              <div className="relative z-10 flex flex-col gap-2 pt-1 sm:flex-row sm:items-center">
                 <Button
                   variant="outline"
                   size="sm"
                   className="w-full gap-1.5 sm:w-auto"
                   asChild
                 >
-                  <Link href={`/dashboard/jobs/${job.id}`}>
+                  <Link href={`/dashboard/datasets/${job.datasetId ?? `ds_${job.id}`}`}>
                     <ExternalLink className="h-3.5 w-3.5" />
-                    Ver ejecución
+                    Ver resultados
                   </Link>
                 </Button>
+
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   className="w-full gap-1.5 sm:w-auto"
-                  onClick={() => void handleExport(job.id, job.datasetId)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleExport(job.id, job.datasetId ?? `ds_${job.id}`);
+                  }}
                 >
                   <Download className="h-3.5 w-3.5" />
-                  Exportar CSV
+                  Descargar CSV
                 </Button>
               </div>
             </div>
