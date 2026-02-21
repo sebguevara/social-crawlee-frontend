@@ -59,6 +59,32 @@ const PLATFORM_DATA: Record<
   },
 };
 
+const PLATFORM_HOVER_GLOW: Record<
+  Platform,
+  { overlay: string; orb: string }
+> = {
+  [Platform.INSTAGRAM]: {
+    overlay:
+      "radial-gradient(circle at 20% 25%, rgba(225, 48, 108, 0.3), transparent 72%)",
+    orb: "#E1306C",
+  },
+  [Platform.FACEBOOK]: {
+    overlay:
+      "radial-gradient(circle at 20% 25%, rgba(24, 119, 242, 0.28), transparent 72%)",
+    orb: "#1877F2",
+  },
+  [Platform.X]: {
+    overlay:
+      "radial-gradient(circle at 20% 25%, rgba(255, 255, 255, 0.24), transparent 72%)",
+    orb: "#9CA3AF",
+  },
+  [Platform.TIKTOK]: {
+    overlay:
+      "radial-gradient(circle at 18% 22%, rgba(37, 244, 238, 0.24), rgba(254, 44, 85, 0.24) 42%, transparent 74%)",
+    orb: "#FE2C55",
+  },
+};
+
 export function Platforms() {
   const entries = Object.values(PLATFORMS);
 
@@ -105,6 +131,7 @@ export function Platforms() {
           {entries.map((platform) => {
             const Icon = PLATFORM_ICONS[platform.key];
             const data = PLATFORM_DATA[platform.key];
+            const hoverGlow = PLATFORM_HOVER_GLOW[platform.key];
 
             return (
               <motion.div
@@ -124,10 +151,18 @@ export function Platforms() {
                 }}
                 className="group relative flex flex-col gap-6 overflow-hidden rounded-2xl border border-border/50 bg-card p-8 glow-card"
               >
-                {/* Hover glow orb */}
-                <div className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full glow-orb opacity-0 transition-opacity duration-500 group-hover:opacity-60 blur-[60px]" />
+                <div
+                  className="pointer-events-none absolute inset-0 z-0 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-20"
+                  style={{ background: hoverGlow.overlay }}
+                />
 
-                <div className="flex items-center gap-4">
+                {/* Hover glow orb */}
+                <div
+                  className="pointer-events-none absolute -top-20 -right-20 z-0 h-40 w-40 rounded-full opacity-0 blur-[60px] transition-opacity duration-500 group-hover:opacity-60"
+                  style={{ backgroundColor: hoverGlow.orb }}
+                />
+
+                <div className="relative z-10 flex items-center gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/50 text-foreground transition-colors group-hover:border-primary/30 group-hover:text-primary">
                     <Icon size={24} />
                   </div>
@@ -141,7 +176,7 @@ export function Platforms() {
                   </div>
                 </div>
 
-                <ul className="flex flex-col gap-2.5">
+                <ul className="relative z-10 flex flex-col gap-2.5">
                   {data.dataPoints.map((point) => (
                     <li
                       key={point}
@@ -153,7 +188,7 @@ export function Platforms() {
                   ))}
                 </ul>
 
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="relative z-10 flex flex-wrap gap-2 pt-2">
                   {platform.supportedJobTypes.map((type) => (
                     <span
                       key={type}

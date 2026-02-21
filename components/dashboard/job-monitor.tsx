@@ -143,44 +143,16 @@ export function JobMonitorProvider({
 
       switch (options.type) {
         case "success":
-          sileo.success({
-            ...sileoOptions,
-            fill: "var(--sileo-state-success)",
-            styles: {
-              title: "!text-white",
-              description: "!text-white/80",
-            },
-          });
+          sileo.success(sileoOptions);
           break;
         case "error":
-          sileo.error({
-            ...sileoOptions,
-            fill: "var(--sileo-state-error)",
-            styles: {
-              title: "!text-white",
-              description: "!text-white/80",
-            },
-          });
+          sileo.error(sileoOptions);
           break;
         case "warning":
-          sileo.warning({
-            ...sileoOptions,
-            fill: "var(--sileo-state-warning)",
-            styles: {
-              title: "!text-white",
-              description: "!text-white/80",
-            },
-          });
+          sileo.warning(sileoOptions);
           break;
         default:
-          sileo.info({
-            ...sileoOptions,
-            fill: "var(--sileo-state-info)",
-            styles: {
-              title: "!text-white",
-              description: "!text-white/80",
-            },
-          });
+          sileo.info(sileoOptions);
           break;
       }
     },

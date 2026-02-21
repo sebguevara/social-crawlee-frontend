@@ -62,7 +62,7 @@ export function Hero() {
           {[
             { value: "4", label: "Plataformas" },
             { value: "3", label: "Modos de scraping" },
-            { value: "Batch", label: "Procesamiento" },
+            { value: "Lotes", label: "Procesamiento" },
             { value: "JSON", label: "Salida" },
           ].map((stat, i) => (
             <motion.div

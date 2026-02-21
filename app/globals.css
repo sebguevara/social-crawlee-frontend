@@ -650,27 +650,55 @@
   /* ─── Toast Enhancements (Sonner/Sileo) ──────────────────── */
   [data-sonner-toast] {
     --radius: 0.75rem !important;
-    border: 1px solid var(--border) !important;
+    background: color-mix(in srgb, var(--card) 90%, var(--background) 10%) !important;
+    color: var(--foreground) !important;
+    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent) !important;
     backdrop-filter: blur(12px) !important;
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent) inset !important;
     font-family: var(--font-sans) !important;
   }
 
+  [data-sonner-toast] [data-title] {
+    color: var(--foreground) !important;
+  }
+
+  [data-sonner-toast] [data-description] {
+    color: var(--muted-foreground) !important;
+  }
+
   [data-sonner-toast][data-type="success"] {
-    background: var(--success) !important;
-    color: var(--success-foreground) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: color-mix(in srgb, var(--card) 88%, var(--success) 12%) !important;
+    border-color: color-mix(in srgb, var(--success) 32%, var(--border) 68%) !important;
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px color-mix(in srgb, var(--success) 20%, transparent) inset !important;
   }
 
   [data-sonner-toast][data-type="error"],
   [data-sonner-toast][data-type="destructive"] {
-    background: var(--destructive) !important;
-    color: var(--destructive-foreground) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: color-mix(in srgb, var(--card) 88%, var(--destructive) 12%) !important;
+    border-color: color-mix(in srgb, var(--destructive) 34%, var(--border) 66%) !important;
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px color-mix(in srgb, var(--destructive) 22%, transparent) inset !important;
   }
 
   [data-sonner-toast][data-type="warning"] {
-    background: var(--warning) !important;
-    color: var(--warning-foreground) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: color-mix(in srgb, var(--card) 88%, var(--warning) 12%) !important;
+    border-color: color-mix(in srgb, var(--warning) 34%, var(--border) 66%) !important;
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px color-mix(in srgb, var(--warning) 22%, transparent) inset !important;
+  }
+
+  [data-sonner-toast][data-type="info"],
+  [data-sonner-toast][data-type="default"] {
+    background: color-mix(in srgb, var(--card) 90%, var(--primary) 10%) !important;
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--border) 72%) !important;
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent) inset !important;
   }
 }

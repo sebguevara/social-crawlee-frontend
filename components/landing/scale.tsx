@@ -6,17 +6,17 @@ const METRICS = [
   {
     value: "Perfiles",
     detail:
-      "Bio, followers, following, verified status, profile picture URL, account metadata",
+      "Bio, seguidores, seguidos, estado de verificación, URL de foto de perfil y metadatos de la cuenta.",
   },
   {
     value: "Publicaciones",
     detail:
-      "Caption, likes, comments count, shares, media URLs, hashtags, mentions, timestamp",
+      "Texto, likes, cantidad de comentarios, compartidos, URLs multimedia, hashtags, menciones y fecha.",
   },
   {
     value: "Comentarios",
     detail:
-      "Author info, comment text, likes, replies count, timestamp, parent thread context",
+      "Información del autor, texto del comentario, likes, cantidad de respuestas, fecha y contexto del hilo principal.",
   },
 ] as const;
 
@@ -24,22 +24,22 @@ const USE_CASES = [
   {
     title: "Análisis competitivo",
     description:
-      "Monitor competitor profiles and content performance across all four platforms. Track follower growth, engagement rates, and content strategy changes.",
+      "Monitorea perfiles de competidores y rendimiento de contenido en las cuatro plataformas. Sigue crecimiento de seguidores, engagement y cambios de estrategia.",
   },
   {
     title: "Investigación de influencers",
     description:
-      "Evaluate influencer reach and authenticity. Analyze follower counts, post engagement, comment sentiment, and content consistency.",
+      "Evalúa alcance y autenticidad de influencers. Analiza cantidad de seguidores, interacción por publicación, sentimiento en comentarios y consistencia de contenido.",
   },
   {
     title: "Inteligencia de mercado",
     description:
-      "Track trending topics, hashtags, and audience sentiment across social networks. Build datasets for market research and trend analysis.",
+      "Sigue temas en tendencia, hashtags y sentimiento de audiencia en redes sociales. Construye datasets para investigación y análisis de mercado.",
   },
   {
     title: "Monitoreo de contenido",
     description:
-      "Monitor brand mentions, product discussions, and customer feedback in real-time. Set up batch jobs to track specific accounts or keywords.",
+      "Monitorea menciones de marca, conversaciones de producto y feedback de clientes en tiempo real. Configura lotes para seguir cuentas o palabras clave.",
   },
 ] as const;
 

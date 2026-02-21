@@ -501,6 +501,21 @@ class ApiClient {
       jobId,
     });
   }
+
+  async purgeUserData(payload: {
+    clerkUserId: string;
+    email: string;
+    confirmation: string;
+  }): Promise<
+    ApiResponse<{
+      ok: true;
+      jobsDeleted: number;
+      postCandidates: number;
+      profileCandidates: number;
+    }>
+  > {
+    return this.post(API_CONFIG.endpoints.purgeUserData, payload);
+  }
 }
 
 export const apiClient = new ApiClient(API_CONFIG.baseUrl);

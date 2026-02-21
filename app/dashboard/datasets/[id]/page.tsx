@@ -33,6 +33,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { API_CONFIG } from "@/config/constants";
 import { sileo } from "sileo";
 
 interface DatasetDetailPageProps {
@@ -47,6 +48,39 @@ const isImageUrl = (value: string) =>
 
 const looksLikeUrl = (value: string) =>
   /^https?:\/\//i.test(value) || value.startsWith("/uploads/");
+
+const resolveUploadsUrl = (value: string) => {
+  if (!value.startsWith("/uploads/")) return value;
+  if (/^https?:\/\//i.test(value)) return value;
+
+  const base = API_CONFIG.baseUrl?.replace(/\/$/, "");
+  if (base) return `${base}${value}`;
+
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}${value}`;
+  }
+
+  return value;
+};
+
+const normalizeUploadsUrls = (node: unknown): unknown => {
+  if (typeof node === "string") {
+    return resolveUploadsUrl(node);
+  }
+
+  if (Array.isArray(node)) {
+    return node.map((entry) => normalizeUploadsUrls(entry));
+  }
+
+  if (node && typeof node === "object") {
+    const entries = Object.entries(node as Record<string, unknown>);
+    return Object.fromEntries(
+      entries.map(([key, value]) => [key, normalizeUploadsUrls(value)]),
+    );
+  }
+
+  return node;
+};
 
 function JsonSyntax({ value }: { value: unknown }) {
   const renderNode = (node: unknown) => {
@@ -107,20 +141,22 @@ function renderValue(value: unknown) {
   }
 
   if (typeof value === "string") {
-    if (looksLikeUrl(value) && isImageUrl(value)) {
+    const resolvedValue = resolveUploadsUrl(value);
+
+    if (looksLikeUrl(resolvedValue) && isImageUrl(resolvedValue)) {
       return (
         <img
-          src={value}
+          src={resolvedValue}
           alt="Media"
           className="h-14 w-14 rounded-md border border-border/40 object-cover"
         />
       );
     }
 
-    if (looksLikeUrl(value)) {
+    if (looksLikeUrl(resolvedValue)) {
       return (
         <a
-          href={value}
+          href={resolvedValue}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-primary hover:underline"
@@ -144,7 +180,7 @@ function renderValue(value: unknown) {
           {value.map((item, index) => (
             <img
               key={`${item}-${index}`}
-              src={item}
+              src={resolveUploadsUrl(item)}
               alt={`Media ${index + 1}`}
               className="h-14 w-14 rounded-md border border-border/40 object-cover"
             />
@@ -193,7 +229,15 @@ export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
         return;
       }
 
-      setItems(datasetResult.data.items);
+      setItems(
+        datasetResult.data.items.map((item) => ({
+          ...item,
+          data: normalizeUploadsUrls(item.data ?? {}) as Record<
+            string,
+            unknown
+          >,
+        })),
+      );
 
       if (datasetResult.data.jobId) {
         const jobResult = await apiClient.getDashboardJobDetail(

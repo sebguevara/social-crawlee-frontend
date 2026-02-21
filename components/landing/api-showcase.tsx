@@ -45,11 +45,11 @@ export function ApiShowcase() {
         <div className="mb-16 flex flex-col items-center gap-4 text-center">
           <span className="text-sm font-medium text-primary">API</span>
           <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            Simple, powerful endpoints
+            Endpoints simples y potentes
           </h2>
           <p className="max-w-xl text-pretty text-muted-foreground">
-            Three endpoints cover every scraping use case. All follow the same
-            request pattern.
+            Tres endpoints cubren todos los casos de scraping. Todos siguen el
+            mismo patrón de solicitud.
           </p>
         </div>
 

@@ -33,6 +33,7 @@ export const API_CONFIG = {
     dashboardDatasetsList: "/api/dashboard/datasets/list",
     stopJob: "/api/scrape/stop",
     deleteJob: "/api/scrape/delete",
+    purgeUserData: "/api/users/purge-data",
   },
   polling: {
     intervalMs: 3000,

@@ -1,24 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { User, Mail, AtSign, Shield, Clock, Save } from "lucide-react";
+import { useClerk, useUser } from "@clerk/nextjs";
+import { User, Mail, AtSign, Shield, Clock, Save, AlertTriangle } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { apiClient } from "@/lib/api";
 import { sileo } from "sileo";
 
 export default function SettingsPage() {
   const { user } = useUser();
+  const { signOut } = useClerk();
 
   const [firstName, setFirstName] = useState(user?.firstName || "");
   const [lastName, setLastName] = useState(user?.lastName || "");
   const [username, setUsername] = useState(user?.username || "");
   const [notifications, setNotifications] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [dangerPhrase, setDangerPhrase] = useState("");
+  const [dangerEmail, setDangerEmail] = useState("");
+  const [dangerAcknowledge, setDangerAcknowledge] = useState(false);
+  const [isPurgingData, setIsPurgingData] = useState(false);
+
+  const expectedEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? "";
+  const hasValidPhrase = dangerPhrase.trim().toUpperCase() === "ELIMINAR TODO";
+  const hasValidEmail =
+    expectedEmail.length > 0 &&
+    dangerEmail.trim().toLowerCase() === expectedEmail;
+  const canPurgeData =
+    Boolean(user?.id) &&
+    hasValidPhrase &&
+    hasValidEmail &&
+    dangerAcknowledge &&
+    !isPurgingData;
 
   const handleSaveProfile = async () => {
     try {
@@ -44,6 +62,52 @@ export default function SettingsPage() {
       title: "Preferencias guardadas",
       description: "Tu configuración fue actualizada.",
     });
+  };
+
+  const handlePurgeData = async () => {
+    if (!user?.id) {
+      sileo.error({
+        title: "Sesión inválida",
+        description: "No se pudo validar tu usuario. Volvé a iniciar sesión.",
+      });
+      return;
+    }
+
+    if (!canPurgeData) {
+      sileo.error({
+        title: "Validación incompleta",
+        description:
+          'Completá frase, email y confirmación para habilitar "Borrar datos".',
+      });
+      return;
+    }
+
+    setIsPurgingData(true);
+    const result = await apiClient.purgeUserData({
+      clerkUserId: user.id,
+      email: dangerEmail.trim().toLowerCase(),
+      confirmation: dangerPhrase.trim().toUpperCase(),
+    });
+    setIsPurgingData(false);
+
+    if (!result.success || !result.data) {
+      sileo.error({
+        title: "No se pudo borrar",
+        description:
+          result.error ??
+          "Ocurrió un error al eliminar tus datos. Intentá nuevamente.",
+      });
+      return;
+    }
+
+    sileo.success({
+      title: "Datos eliminados",
+      description: `Se eliminaron ${result.data.jobsDeleted} ejecuciones y sus datos asociados.`,
+    });
+
+    setDangerPhrase("");
+    setDangerEmail("");
+    setDangerAcknowledge(false);
   };
 
   return (
@@ -250,27 +314,69 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex flex-col gap-4 rounded-xl border border-red-500/20 bg-card/80 p-5">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[13px] font-medium text-foreground">
-                  Borrar todos los datos
-                </span>
-                <p className="text-[11px] text-muted-foreground">
-                  Elimina todas las ejecuciones y datasets. Esta acción no se
-                  puede deshacer.
+            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                <p className="text-[12px] text-red-500/90">
+                  Esta acción elimina en forma irreversible tus ejecuciones,
+                  datasets y archivos locales asociados.
                 </p>
               </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label className="text-[12px] text-foreground">
+                Escribí <span className="font-semibold">ELIMINAR TODO</span> para
+                continuar
+              </Label>
+              <Input
+                value={dangerPhrase}
+                onChange={(event) => setDangerPhrase(event.target.value)}
+                placeholder="ELIMINAR TODO"
+                className="bg-secondary/30 text-sm"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label className="text-[12px] text-foreground">
+                Confirmá tu email para validar identidad
+              </Label>
+              <Input
+                value={dangerEmail}
+                onChange={(event) => setDangerEmail(event.target.value)}
+                placeholder={expectedEmail || "tu@email.com"}
+                className="bg-secondary/30 text-sm"
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-border/50 bg-secondary/20 px-3 py-2">
+              <div className="pr-3">
+                <p className="text-[12px] text-foreground">
+                  Entiendo que esta acción no se puede deshacer.
+                </p>
+              </div>
+              <Switch
+                checked={dangerAcknowledge}
+                onCheckedChange={setDangerAcknowledge}
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-400"
-                onClick={() =>
-                  toast.error("No implementado", {
-                    description: "Esta acción no está disponible en la demo.",
-                  })
-                }
+                onClick={() => signOut({ redirectUrl: "/" })}
+                disabled={isPurgingData}
               >
-                Borrar datos
+                Cerrar sesión
+              </Button>
+              <Button
+                size="sm"
+                className="bg-red-600 text-white hover:bg-red-700 disabled:bg-red-600/40"
+                onClick={handlePurgeData}
+                disabled={!canPurgeData}
+              >
+                {isPurgingData ? "Borrando..." : "Borrar datos"}
               </Button>
             </div>
           </div>

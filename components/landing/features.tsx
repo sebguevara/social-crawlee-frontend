@@ -8,7 +8,7 @@ const FEATURES = [
     icon: Layers,
     title: "Procesamiento por lotes",
     description:
-      "Envía cientos de usuarios o URLs en un solo request. Cada objetivo se convierte en un trabajo independiente encolado y procesado en paralelo.",
+      "Envía cientos de usuarios o URLs en una sola solicitud. Cada objetivo se convierte en un trabajo independiente encolado y procesado en paralelo.",
   },
   {
     icon: Braces,
@@ -32,7 +32,7 @@ const FEATURES = [
     icon: Zap,
     title: "API unificada",
     description:
-      "Tres endpoints cubren todos los casos: perfiles, publicaciones y comentarios. Mismo patrón de request para Instagram, Facebook, X y TikTok.",
+      "Tres endpoints cubren todos los casos: perfiles, publicaciones y comentarios. Mismo patrón de solicitud para Instagram, Facebook, X y TikTok.",
   },
   {
     icon: BarChart3,
