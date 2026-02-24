@@ -61,7 +61,7 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
     description: "Scrapea perfiles, publicaciones y comentarios de Instagram.",
     color: "hsl(330, 70%, 55%)",
     icon: "instagram",
-    maxItemsDefault: 50,
+    maxItemsDefault: 1000,
     daysBackDefault: 7,
     supportedJobTypes: [JobType.PROFILE, JobType.POSTS, JobType.COMMENTS],
   },
@@ -71,7 +71,7 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
     description: "Extrae datos de páginas y grupos de Facebook.",
     color: "hsl(220, 70%, 55%)",
     icon: "facebook",
-    maxItemsDefault: 50,
+    maxItemsDefault: 1000,
     daysBackDefault: 7,
     supportedJobTypes: [JobType.PROFILE, JobType.POSTS, JobType.COMMENTS],
   },
@@ -81,7 +81,7 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
     description: "Obtén publicaciones, respuestas y datos de perfil desde X.",
     color: "hsl(0, 0%, 20%)",
     icon: "twitter",
-    maxItemsDefault: 100,
+    maxItemsDefault: 1000,
     daysBackDefault: 3,
     supportedJobTypes: [JobType.PROFILE, JobType.POSTS, JobType.COMMENTS],
   },
@@ -91,7 +91,7 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
     description: "Scrapea videos, perfiles y métricas de TikTok.",
     color: "hsl(340, 80%, 55%)",
     icon: "music",
-    maxItemsDefault: 30,
+    maxItemsDefault: 1000,
     daysBackDefault: 7,
     supportedJobTypes: [JobType.PROFILE, JobType.POSTS, JobType.COMMENTS],
   },
@@ -132,7 +132,7 @@ export const JOB_TYPES: Record<JobType, JobTypeConfig> = {
     description: "Extrae comentarios desde URLs específicas de publicaciones.",
     requiresUsernames: false,
     requiresPostUrls: true,
-    requiresDaysBack: true,
+    requiresDaysBack: false,
   },
 } as const;
 
@@ -156,7 +156,7 @@ export const DASHBOARD_NAV: readonly NavItem[] = [
 export const DEFAULTS = {
   platform: Platform.INSTAGRAM,
   jobType: JobType.PROFILE,
-  maxItems: 50,
+  maxItems: 1000,
   daysBack: 7,
   pollingInterval: 3000,
 } as const;

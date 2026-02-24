@@ -23,7 +23,7 @@ import { useNotifications } from "@/components/dashboard/job-monitor";
 import { SidebarContent } from "@/components/dashboard/sidebar";
 import { formatRelativeTime } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface DashboardHeaderProps {
   title: string;
@@ -32,6 +32,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ title, description }: DashboardHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const {
     notifications,
     unreadCount,
@@ -40,33 +41,49 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
     clearNotifications,
   } = useNotifications();
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border/30 bg-background/80 px-4 py-[11px] backdrop-blur-xl sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
         {/* Mobile menu trigger */}
-        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 p-0 md:hidden"
-              aria-label="Menú principal"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] p-0">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Menú de navegación</SheetTitle>
-            </SheetHeader>
-            <div className="h-full pt-4">
-              <SidebarContent
-                onSelect={() => setIsMobileMenuOpen(false)}
-                hideCollapseControl
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
+        {mounted ? (
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 p-0 md:hidden"
+                aria-label="Menú principal"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] p-0">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Menú de navegación</SheetTitle>
+              </SheetHeader>
+              <div className="h-full pt-4">
+                <SidebarContent
+                  onSelect={() => setIsMobileMenuOpen(false)}
+                  hideCollapseControl
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 p-0 md:hidden"
+            aria-label="Menú principal"
+            disabled
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
 
         <div className="min-w-0 flex flex-col gap-0.5">
           <h1
@@ -85,30 +102,35 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
 
       <div className="ml-auto flex shrink-0 items-center gap-2.5">
         {/* Theme toggle */}
-        <ThemeToggle />
+        {mounted ? (
+          <ThemeToggle />
+        ) : (
+          <div className="h-8 w-8 rounded-lg border border-border/50" />
+        )}
 
         {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-8 w-8 rounded-lg border border-border/50 text-muted-foreground transition-all hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground active:scale-95"
-              aria-label="Notificaciones"
+        {mounted ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-8 w-8 rounded-lg border border-border/50 text-muted-foreground transition-all hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground active:scale-95"
+                aria-label="Notificaciones"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]"></span>
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="mt-2 w-80 overflow-hidden rounded-xl border border-border/40 bg-background/95 p-0 shadow-2xl backdrop-blur-xl"
             >
-              <Bell className="h-4 w-4" />
-              {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]"></span>
-                </span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="mt-2 w-80 overflow-hidden rounded-xl border border-border/40 bg-background/95 p-0 shadow-2xl backdrop-blur-xl"
-          >
             <div className="flex items-center justify-between border-b border-border/40 bg-muted/30 px-4 py-3">
               <span className="text-sm font-semibold tracking-tight">
                 Notificaciones {unreadCount > 0 && `(${unreadCount})`}
@@ -195,8 +217,19 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
                 </Link>
               </div>
             )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative h-8 w-8 rounded-lg border border-border/50 text-muted-foreground"
+            aria-label="Notificaciones"
+            disabled
+          >
+            <Bell className="h-4 w-4" />
+          </Button>
+        )}
 
         {/* Primary CTA */}
         <Link

@@ -43,6 +43,22 @@ function parseManualList(values: string[]): string[] {
   return values.map((value) => value.trim()).filter(Boolean);
 }
 
+function sanitizePostUrl(value: string): string {
+  const cleaned = value
+    .trim()
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[)\],;]+$/g, "")
+    .replace(/\.+$/g, "");
+
+  try {
+    const url = new URL(cleaned);
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return cleaned;
+  }
+}
+
 function validateFormWithLists(
   state: ScrapeFormState,
   input: { usernames: string[]; postUrls: string[] },
@@ -80,10 +96,7 @@ function validateFormWithLists(
   ) {
     errors.maxItems = "El máximo de ítems debe estar entre 1 y 1000.";
   }
-  if (
-    state.jobType !== JobType.PROFILE &&
-    (state.daysBack < 1 || state.daysBack > 365)
-  ) {
+  if (state.jobType === JobType.POSTS && (state.daysBack < 1 || state.daysBack > 365)) {
     errors.daysBack = "Los días hacia atrás deben estar entre 1 y 365.";
   }
 
@@ -125,9 +138,10 @@ export function ScrapeForm() {
     postUrlsMode === "manual"
       ? parseManualList(postUrlsManual)
       : parseTokenList(postUrlsBulk);
+  const normalizedPostUrls = postUrls.map(sanitizePostUrl).filter(Boolean);
   const liveValidationErrors = validateFormWithLists(form, {
     usernames,
-    postUrls,
+    postUrls: normalizedPostUrls,
   });
   const canSubmit = Object.keys(liveValidationErrors).length === 0;
   const executionBlockReason =
@@ -165,7 +179,7 @@ export function ScrapeForm() {
   const handleSubmit = async () => {
     const validationErrors = validateFormWithLists(form, {
       usernames,
-      postUrls,
+      postUrls: normalizedPostUrls,
     });
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -188,7 +202,8 @@ export function ScrapeForm() {
           result = await apiClient.scrapePosts({
             platform: form.platform,
             usernames: usernames.length > 0 ? usernames : undefined,
-            postUrls: postUrls.length > 0 ? postUrls : undefined,
+            postUrls:
+              normalizedPostUrls.length > 0 ? normalizedPostUrls : undefined,
             daysBack: form.daysBack,
             maxItems: form.maxItems,
           });
@@ -196,8 +211,7 @@ export function ScrapeForm() {
         case JobType.COMMENTS:
           result = await apiClient.scrapeComments({
             platform: form.platform,
-            postUrls,
-            daysBack: form.daysBack,
+            postUrls: normalizedPostUrls,
             maxItems: form.maxItems,
           });
           break;
@@ -236,6 +250,7 @@ export function ScrapeForm() {
             return (
               <button
                 key={p.key}
+                type="button"
                 onClick={() => updateField("platform", p.key)}
                 className={cn(
                   "flex flex-col items-center gap-2 rounded-xl border p-4 text-sm transition-all",
@@ -263,6 +278,7 @@ export function ScrapeForm() {
             return (
               <button
                 key={jt.key}
+                type="button"
                 onClick={() => updateField("jobType", jt.key)}
                 className={cn(
                   "flex flex-col gap-1 rounded-xl border p-4 text-left transition-all",
@@ -496,24 +512,26 @@ export function ScrapeForm() {
               <p className="text-xs text-red-500">{errors.maxItems}</p>
             )}
           </div>
-          <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium text-foreground">
-              Días hacia atrás
-            </Label>
-            <Input
-              type="number"
-              min={1}
-              max={365}
-              value={form.daysBack}
-              onChange={(e) =>
-                updateField("daysBack", parseInt(e.target.value) || 1)
-              }
-              className="bg-card font-mono"
-            />
-            {errors.daysBack && (
-              <p className="text-xs text-red-500">{errors.daysBack}</p>
-            )}
-          </div>
+          {form.jobType === JobType.POSTS && (
+            <div className="flex flex-col gap-2">
+              <Label className="text-sm font-medium text-foreground">
+                Días hacia atrás
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                max={365}
+                value={form.daysBack}
+                onChange={(e) =>
+                  updateField("daysBack", parseInt(e.target.value) || 1)
+                }
+                className="bg-card font-mono"
+              />
+              {errors.daysBack && (
+                <p className="text-xs text-red-500">{errors.daysBack}</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -531,9 +549,9 @@ export function ScrapeForm() {
                     usernames,
                   }
                 : {}),
-              ...(config.requiresPostUrls && postUrls.length > 0
+              ...(config.requiresPostUrls && normalizedPostUrls.length > 0
                 ? {
-                    postUrls,
+                    postUrls: normalizedPostUrls,
                   }
                 : {}),
               ...(config.requiresDaysBack ? { daysBack: form.daysBack } : {}),
@@ -555,6 +573,7 @@ export function ScrapeForm() {
           </p>
         )}
         <Button
+          type="button"
           size="lg"
           onClick={handleSubmit}
           disabled={loading || !canSubmit}

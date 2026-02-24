@@ -43,7 +43,6 @@ export interface ScrapePostsRequest {
 export interface ScrapeCommentsRequest {
   platform: Platform;
   postUrls: string[];
-  daysBack: number;
   maxItems: number;
 }
 

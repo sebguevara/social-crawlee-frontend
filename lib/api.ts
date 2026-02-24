@@ -107,8 +107,9 @@ class ApiClient {
     endpoint: string,
     body: unknown,
   ): Promise<ApiResponse<T>> {
+    const url = `${this.baseUrl}${endpoint}`;
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -128,10 +129,10 @@ class ApiClient {
       const data = (await response.json()) as T;
       return { success: true, data };
     } catch (error) {
+      const detail = error instanceof Error ? error.message : "Unknown error occurred";
       return {
         success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        error: `Network error calling ${endpoint}: ${detail}`,
       };
     }
   }

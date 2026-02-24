@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -33,6 +33,13 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { API_CONFIG } from "@/config/constants";
 import { sileo } from "sileo";
 
@@ -205,12 +212,18 @@ function renderValue(value: unknown) {
 
 export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
   const { id } = use(params);
+  const [mounted, setMounted] = useState(false);
   const [job, setJob] = useState<Job | null>(null);
   const [items, setItems] = useState<DatasetItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [authorFilter, setAuthorFilter] = useState("");
   const [view, setView] = useState<"table" | "json">("table");
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -261,8 +274,33 @@ export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
   const filteredItems = items.filter((item) => {
     const searchData = item.data || {};
     const searchString = JSON.stringify(searchData).toLowerCase();
-    return searchString.includes(search.toLowerCase());
+    const dataAuthor =
+      typeof searchData.authorUsername === "string"
+        ? searchData.authorUsername.toLowerCase()
+        : "";
+    const wantedAuthor = authorFilter.trim().toLowerCase();
+    const matchesAuthor = wantedAuthor.length === 0 || dataAuthor === wantedAuthor;
+
+    return searchString.includes(search.toLowerCase()) && matchesAuthor;
   });
+
+  const authorOptions = useMemo(() => {
+    const inputAuthors = (job?.input?.usernames ?? [])
+      .map((username) => username.trim())
+      .filter((username) => username.length > 0);
+    if (inputAuthors.length > 0) {
+      return Array.from(new Set(inputAuthors));
+    }
+
+    const detectedAuthors = items
+      .map((item) => {
+        const username = item.data?.authorUsername;
+        return typeof username === "string" ? username.trim() : "";
+      })
+      .filter((username) => username.length > 0);
+
+    return Array.from(new Set(detectedAuthors));
+  }, [job, items]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const paginatedItems = filteredItems.slice(
@@ -389,37 +427,93 @@ export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
         )}
 
         <Card className="flex flex-col overflow-hidden border-border/50 bg-card/30 shadow-lg backdrop-blur-md">
-          <div className="flex flex-col gap-4 border-b border-border/50 bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Filtrar datos..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="bg-background/50 pl-9"
-              />
+          <div className="flex flex-col gap-4 border-b border-border/50 bg-muted/30 p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+              <div className="relative w-full sm:max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Filtrar datos..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="h-10 border-border/60 bg-background/50 pl-9 shadow-sm"
+                />
+              </div>
+
+              <div className="w-full sm:w-[260px]">
+                {mounted ? (
+                  <Select
+                    value={authorFilter || "__all__"}
+                    onValueChange={(value) => {
+                      setAuthorFilter(value === "__all__" ? "" : value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="h-10 w-full border-border/60 bg-background/50 shadow-sm">
+                      <SelectValue placeholder="Filtrar por autor" />
+                    </SelectTrigger>
+                    <SelectContent className="border-border/60 bg-background/95 shadow-xl backdrop-blur-xl">
+                      <SelectItem
+                        value="__all__"
+                        className="rounded-md py-2 pr-8 pl-2.5 text-sm data-[highlighted]:bg-primary/10 data-[highlighted]:text-foreground"
+                      >
+                        Todos los autores
+                      </SelectItem>
+                      {authorOptions.map((username) => (
+                        <SelectItem
+                          key={username}
+                          value={username}
+                          className="rounded-md py-2 pr-8 pl-2.5 text-sm data-[highlighted]:bg-primary/10 data-[highlighted]:text-foreground"
+                        >
+                          @{username}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="h-10 w-full rounded-md border border-border/60 bg-background/60" />
+                )}
+              </div>
             </div>
 
-            <div className="flex w-full items-center gap-2 sm:w-auto">
-              <Tabs
-                value={view}
-                onValueChange={(v) => setView(v as "table" | "json")}
-                className="w-full sm:w-auto"
-              >
-                <TabsList className="grid w-full grid-cols-2 sm:w-[200px]">
-                  <TabsTrigger value="table" className="gap-2">
-                    <TableIcon className="h-4 w-4" />
+            <div className="flex w-full items-center gap-2 lg:w-auto">
+              {mounted ? (
+                <Tabs
+                  value={view}
+                  onValueChange={(v) => setView(v as "table" | "json")}
+                  className="w-full sm:w-auto"
+                >
+                  <TabsList className="grid w-full grid-cols-2 sm:w-[200px]">
+                    <TabsTrigger value="table" className="gap-2">
+                      <TableIcon className="h-4 w-4" />
+                      Tabla
+                    </TabsTrigger>
+                    <TabsTrigger value="json" className="gap-2">
+                      <Code className="h-4 w-4" />
+                      Json
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              ) : (
+                <div className="grid w-full grid-cols-2 rounded-lg border border-border/50 bg-muted/40 p-[3px] sm:w-[200px]">
+                  <button
+                    type="button"
+                    className="rounded-md bg-background px-2 py-1 text-sm font-medium"
+                    disabled
+                  >
                     Tabla
-                  </TabsTrigger>
-                  <TabsTrigger value="json" className="gap-2">
-                    <Code className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md px-2 py-1 text-sm font-medium text-muted-foreground"
+                    disabled
+                  >
                     Json
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+                  </button>
+                </div>
+              )}
 
               {view === "json" && (
                 <Button variant="outline" size="sm" onClick={handleCopyJson}>
