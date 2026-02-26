@@ -1,0 +1,19 @@
+services:
+  social-crawlee-frontend:
+    container_name: social_crawlee_frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://host.docker.internal:5678
+    ports:
+      - "3700:3700"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://host.docker.internal:5678
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - NEXT_PUBLIC_DEFAULT_THEME=${NEXT_PUBLIC_DEFAULT_THEME:-system}
+      - PORT=3700
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
