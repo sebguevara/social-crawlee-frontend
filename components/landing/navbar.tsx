@@ -157,7 +157,11 @@ function AuthButtons({ isMobile }: { isMobile?: boolean }) {
       )}
     >
       <SignedOut>
-        <SignInButton mode="redirect" forceRedirectUrl="/dashboard">
+        <SignInButton
+          mode="redirect"
+          forceRedirectUrl="/dashboard"
+          fallbackRedirectUrl="/"
+        >
           <Button
             size={isMobile ? "default" : "sm"}
             variant="default"

@@ -17,7 +17,12 @@ export default async function SignInPage() {
       <div className="pointer-events-none absolute top-1/3 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 glow-orb blur-[100px]" />
 
       <div className="relative z-10 w-full max-w-md">
-        <SignIn path="/sign-in" routing="path" forceRedirectUrl="/dashboard" />
+        <SignIn
+          path="/sign-in"
+          routing="path"
+          forceRedirectUrl="/dashboard"
+          fallbackRedirectUrl="/"
+        />
       </div>
     </main>
   );
