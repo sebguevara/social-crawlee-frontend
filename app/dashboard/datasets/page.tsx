@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import {
   Copy,
@@ -98,6 +99,7 @@ function mapDatasetItemToCsvRow(item: DatasetItem): CsvRow {
 }
 
 export default function DatasetsPage() {
+  const { user } = useUser();
   const [search, setSearch] = useState("");
   const [datasets, setDatasets] = useState<Job[]>([]);
   const [totalDatasets, setTotalDatasets] = useState(0);
@@ -109,11 +111,10 @@ export default function DatasetsPage() {
     let cancelled = false;
 
     const timer = setTimeout(async () => {
-      const result = await apiClient.listDashboardDatasets({
-        search,
-        page: 1,
-        limit: 200,
-      });
+      const result = await apiClient.listDashboardDatasets(
+        { search, page: 1, limit: 200 },
+        user?.id ?? null,
+      );
 
       if (!result.success || !result.data || cancelled) return;
       setDatasets(result.data.data);
@@ -124,7 +125,7 @@ export default function DatasetsPage() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [search]);
+  }, [search, user?.id]);
 
   const filteredDatasets = useMemo(
     () =>

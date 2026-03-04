@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import {
   Briefcase,
   Play,
@@ -19,12 +20,13 @@ import { Platform, JobType, type DashboardSummaryResponse } from "@/types";
 import { formatNumber, getJobTypeLabel } from "@/lib/formatters";
 
 export default function DashboardOverviewPage() {
+  const { user } = useUser();
   const [stats, setStats] = useState<DashboardSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchSummary = async (showLoading = false) => {
     if (showLoading) setLoading(true);
-    const result = await apiClient.getDashboardSummary();
+    const result = await apiClient.getDashboardSummary(user?.id ?? null);
     if (result.success && result.data) {
       setStats(result.data);
     }
@@ -38,7 +40,7 @@ export default function DashboardOverviewPage() {
     }, 5000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [user?.id]);
 
   const totalJobs = stats?.totalJobs ?? 0;
   const recentJobs = stats?.recentJobs ?? [];

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { Rocket, Plus, Trash2 } from "lucide-react";
 import {
   SiInstagram,
@@ -105,6 +106,7 @@ function validateFormWithLists(
 
 export function ScrapeForm() {
   const router = useRouter();
+  const { user } = useUser();
   const { addJob } = useJobMonitor();
   const [loading, setLoading] = useState(false);
 
@@ -191,29 +193,37 @@ export function ScrapeForm() {
     try {
       let result;
 
+      const clerkUserId = user?.id ?? null;
+
       switch (form.jobType) {
         case JobType.PROFILE:
-          result = await apiClient.scrapeProfiles({
-            platform: form.platform,
-            usernames,
-          });
+          result = await apiClient.scrapeProfiles(
+            { platform: form.platform, usernames },
+            clerkUserId,
+          );
           break;
         case JobType.POSTS:
-          result = await apiClient.scrapePosts({
-            platform: form.platform,
-            usernames: usernames.length > 0 ? usernames : undefined,
-            postUrls:
-              normalizedPostUrls.length > 0 ? normalizedPostUrls : undefined,
-            daysBack: form.daysBack,
-            maxItems: form.maxItems,
-          });
+          result = await apiClient.scrapePosts(
+            {
+              platform: form.platform,
+              usernames: usernames.length > 0 ? usernames : undefined,
+              postUrls:
+                normalizedPostUrls.length > 0 ? normalizedPostUrls : undefined,
+              daysBack: form.daysBack,
+              maxItems: form.maxItems,
+            },
+            clerkUserId,
+          );
           break;
         case JobType.COMMENTS:
-          result = await apiClient.scrapeComments({
-            platform: form.platform,
-            postUrls: normalizedPostUrls,
-            maxItems: form.maxItems,
-          });
+          result = await apiClient.scrapeComments(
+            {
+              platform: form.platform,
+              postUrls: normalizedPostUrls,
+              maxItems: form.maxItems,
+            },
+            clerkUserId,
+          );
           break;
       }
 

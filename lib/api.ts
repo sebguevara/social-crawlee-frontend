@@ -175,10 +175,12 @@ class ApiClient {
 
   async scrapeProfiles(
     payload: ScrapeProfilesRequest,
+    clerkUserId?: string | null,
   ): Promise<ApiResponse<JobCreatedResponse>> {
+    const body = { ...payload, ...(clerkUserId ? { clerkUserId } : {}) };
     const response = await this.post<BatchQueueResponse>(
       API_CONFIG.endpoints.scrapeProfiles,
-      payload,
+      body,
     );
     if (!response.success || !response.data) {
       return { success: false, error: response.error };
@@ -209,10 +211,12 @@ class ApiClient {
 
   async scrapePosts(
     payload: ScrapePostsRequest,
+    clerkUserId?: string | null,
   ): Promise<ApiResponse<JobCreatedResponse>> {
+    const body = { ...payload, ...(clerkUserId ? { clerkUserId } : {}) };
     const response = await this.post<BatchQueueResponse>(
       API_CONFIG.endpoints.scrapePosts,
-      payload,
+      body,
     );
     if (!response.success || !response.data) {
       return { success: false, error: response.error };
@@ -243,10 +247,12 @@ class ApiClient {
 
   async scrapeComments(
     payload: ScrapeCommentsRequest,
+    clerkUserId?: string | null,
   ): Promise<ApiResponse<JobCreatedResponse>> {
+    const body = { ...payload, ...(clerkUserId ? { clerkUserId } : {}) };
     const response = await this.post<BatchQueueResponse>(
       API_CONFIG.endpoints.scrapeComments,
-      payload,
+      body,
     );
     if (!response.success || !response.data) {
       return { success: false, error: response.error };
@@ -284,7 +290,10 @@ class ApiClient {
     );
   }
 
-  async getDashboardSummary(): Promise<ApiResponse<DashboardSummaryResponse>> {
+  async getDashboardSummary(
+    clerkUserId?: string | null,
+  ): Promise<ApiResponse<DashboardSummaryResponse>> {
+    const body = clerkUserId ? { clerkUserId } : {};
     const response = await this.post<
       Omit<
         DashboardSummaryResponse,
@@ -294,7 +303,7 @@ class ApiClient {
         jobsByType: Record<string, number>;
         recentJobs: BackendDashboardJob[];
       }
-    >(API_CONFIG.endpoints.dashboardSummary, {});
+    >(API_CONFIG.endpoints.dashboardSummary, body);
 
     if (!response.success || !response.data) {
       return { success: false, error: response.error };
@@ -325,11 +334,13 @@ class ApiClient {
 
   async listDashboardJobs(
     payload: DashboardJobsListRequest,
+    clerkUserId?: string | null,
   ): Promise<ApiResponse<PaginatedResponse<Job>>> {
+    const body = { ...payload, ...(clerkUserId ? { clerkUserId } : {}) };
     const response = await this.post<{
       data: BackendDashboardJob[];
       pagination: PaginatedResponse<Job>["pagination"];
-    }>(API_CONFIG.endpoints.dashboardJobsList, payload);
+    }>(API_CONFIG.endpoints.dashboardJobsList, body);
 
     if (!response.success || !response.data) {
       return { success: false, error: response.error };
@@ -344,10 +355,14 @@ class ApiClient {
     };
   }
 
-  async getDashboardJobDetail(jobId: string): Promise<ApiResponse<Job>> {
+  async getDashboardJobDetail(
+    jobId: string,
+    clerkUserId?: string | null,
+  ): Promise<ApiResponse<Job>> {
+    const body = { jobId, ...(clerkUserId ? { clerkUserId } : {}) };
     const response = await this.post<BackendDashboardJob>(
       API_CONFIG.endpoints.dashboardJobDetail,
-      { jobId },
+      body,
     );
     if (!response.success || !response.data) {
       return { success: false, error: response.error };
@@ -362,9 +377,12 @@ class ApiClient {
       onDone?: (job: Job) => void;
       onError?: (error: string) => void;
     },
+    clerkUserId?: string | null,
   ) {
+    const query: Record<string, string | number> = { jobId };
+    if (clerkUserId) query.clerkUserId = clerkUserId;
     const source = new EventSource(
-      this.streamUrl(API_CONFIG.endpoints.dashboardJobStream, { jobId }),
+      this.streamUrl(API_CONFIG.endpoints.dashboardJobStream, query),
     );
 
     source.addEventListener("progress", (event) => {
@@ -472,11 +490,13 @@ class ApiClient {
 
   async listDashboardDatasets(
     payload: DashboardDatasetsListRequest,
+    clerkUserId?: string | null,
   ): Promise<ApiResponse<PaginatedResponse<Job>>> {
+    const body = { ...payload, ...(clerkUserId ? { clerkUserId } : {}) };
     const response = await this.post<{
       data: BackendDashboardJob[];
       pagination: PaginatedResponse<Job>["pagination"];
-    }>(API_CONFIG.endpoints.dashboardDatasetsList, payload);
+    }>(API_CONFIG.endpoints.dashboardDatasetsList, body);
 
     if (!response.success || !response.data) {
       return { success: false, error: response.error };

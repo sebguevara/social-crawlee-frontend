@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { SlidersHorizontal } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { JobsTable } from "@/components/dashboard/jobs-table";
@@ -38,6 +39,7 @@ const TYPE_OPTIONS = [
 ];
 
 export default function JobsPage() {
+  const { user } = useUser();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [platformFilter, setPlatformFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -45,13 +47,16 @@ export default function JobsPage() {
   const [totalJobs, setTotalJobs] = useState(0);
 
   const loadJobs = async () => {
-    const result = await apiClient.listDashboardJobs({
-      page: 1,
-      limit: 200,
-      status: statusFilter as JobStatus | "ALL",
-      platform: platformFilter as Platform | "ALL",
-      type: typeFilter as JobType | "ALL",
-    });
+    const result = await apiClient.listDashboardJobs(
+      {
+        page: 1,
+        limit: 200,
+        status: statusFilter as JobStatus | "ALL",
+        platform: platformFilter as Platform | "ALL",
+        type: typeFilter as JobType | "ALL",
+      },
+      user?.id ?? null,
+    );
 
     if (result.success && result.data) {
       setJobs(result.data.data);
@@ -63,13 +68,16 @@ export default function JobsPage() {
     let cancelled = false;
 
     const loadJobsSilently = async () => {
-      const result = await apiClient.listDashboardJobs({
-        page: 1,
-        limit: 200,
-        status: statusFilter as JobStatus | "ALL",
-        platform: platformFilter as Platform | "ALL",
-        type: typeFilter as JobType | "ALL",
-      });
+      const result = await apiClient.listDashboardJobs(
+        {
+          page: 1,
+          limit: 200,
+          status: statusFilter as JobStatus | "ALL",
+          platform: platformFilter as Platform | "ALL",
+          type: typeFilter as JobType | "ALL",
+        },
+        user?.id ?? null,
+      );
       if (result.success && result.data && !cancelled) {
         setJobs(result.data.data);
         setTotalJobs(result.data.pagination.total);
@@ -85,7 +93,7 @@ export default function JobsPage() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [platformFilter, statusFilter, typeFilter]);
+  }, [platformFilter, statusFilter, typeFilter, user?.id]);
 
   const hasActiveFilters =
     statusFilter !== "ALL" || platformFilter !== "ALL" || typeFilter !== "ALL";
