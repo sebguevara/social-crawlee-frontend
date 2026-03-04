@@ -9,6 +9,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import { useUser } from "@clerk/nextjs";
 import { sileo } from "sileo";
 import { apiClient } from "@/lib/api";
 import { Job, JobStatus } from "@/types";
@@ -52,6 +53,7 @@ export function JobMonitorProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = useUser();
   const [activeJobsMap, setActiveJobsMap] = useState<Map<string, Job>>(
     new Map(),
   );
@@ -163,7 +165,9 @@ export function JobMonitorProvider({
     (jobId: string) => {
       if (activeJobsMap.has(jobId)) return;
 
-      const source = apiClient.openDashboardJobStream(jobId, {
+      const source = apiClient.openDashboardJobStream(
+        jobId,
+        {
         onProgress: (job) => {
           updateJob(job);
         },
@@ -193,11 +197,13 @@ export function JobMonitorProvider({
             jobId: jobId,
           });
         },
-      });
+      },
+        user?.id ?? null,
+      );
 
       return () => source.close();
     },
-    [activeJobsMap, removeJob, updateJob, notify],
+    [activeJobsMap, removeJob, updateJob, notify, user?.id],
   );
 
   const addJob = useCallback(

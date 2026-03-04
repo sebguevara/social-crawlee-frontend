@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -32,6 +33,7 @@ interface JobDetailPageProps {
 
 export default function JobDetailPage({ params }: JobDetailPageProps) {
   const { id } = use(params);
+  const { user } = useUser();
   const jobId = id;
   const [job, setJob] = useState<Job | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -45,9 +47,10 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
     let cancelled = false;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
     let source: EventSource | null = null;
+    const clerkUserId = user?.id ?? null;
 
     const loadDetail = async () => {
-      const result = await apiClient.getDashboardJobDetail(jobId);
+      const result = await apiClient.getDashboardJobDetail(jobId, clerkUserId);
       if (cancelled) return;
 
       if (!result.success || !result.data) {
@@ -67,7 +70,9 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
     };
 
     const startStream = () => {
-      source = apiClient.openDashboardJobStream(jobId, {
+      source = apiClient.openDashboardJobStream(
+        jobId,
+        {
         onProgress: (nextJob) => {
           if (cancelled) return;
           setNotFound(false);
@@ -88,7 +93,9 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
         onError: () => {
           startPolling();
         },
-      });
+      },
+        clerkUserId,
+      );
     };
 
     void loadDetail();
@@ -99,7 +106,7 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
       if (source) source.close();
       if (pollTimer) clearInterval(pollTimer);
     };
-  }, [jobId]);
+  }, [jobId, user?.id]);
 
   if (notFound) {
     return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -212,6 +213,7 @@ function renderValue(value: unknown) {
 
 export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
   const { id } = use(params);
+  const { user } = useUser();
   const [mounted, setMounted] = useState(false);
   const [job, setJob] = useState<Job | null>(null);
   const [items, setItems] = useState<DatasetItem[]>([]);
@@ -255,6 +257,7 @@ export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
       if (datasetResult.data.jobId) {
         const jobResult = await apiClient.getDashboardJobDetail(
           datasetResult.data.jobId,
+          user?.id ?? null,
         );
         if (!cancelled && jobResult.success && jobResult.data) {
           setJob(jobResult.data);
@@ -269,7 +272,7 @@ export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, user?.id]);
 
   const filteredItems = items.filter((item) => {
     const searchData = item.data || {};
