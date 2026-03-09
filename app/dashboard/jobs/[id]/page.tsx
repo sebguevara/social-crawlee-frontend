@@ -243,6 +243,26 @@ export default function JobDetailPage({ params }: JobDetailPageProps) {
               {JSON.stringify(job.input, null, 2)}
             </pre>
           </div>
+          {job.input.postUrls && job.input.postUrls.length > 0 && (
+            <div className="mt-4 flex flex-col gap-2">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                URLs objetivo
+              </h4>
+              <div className="flex flex-col gap-2">
+                {job.input.postUrls.map((postUrl) => (
+                  <a
+                    key={postUrl}
+                    href={postUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all rounded-lg border border-border/50 bg-background/50 px-3 py-2 text-sm text-primary hover:underline"
+                  >
+                    {postUrl}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Actions */}

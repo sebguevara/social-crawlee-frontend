@@ -135,6 +135,7 @@ export interface JobInput {
 export interface DatasetItem {
   id: string;
   jobId: string;
+  url?: string;
   data: Record<string, unknown>;
   scrapedAt: string;
 }

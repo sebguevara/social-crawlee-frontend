@@ -18,8 +18,14 @@ export const APP_CONFIG = {
 
 // ─── API Configuration ──────────────────────────────────────
 
+const resolveApiBaseUrl = (): string => {
+  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  return "http://localhost:5678";
+};
+
 export const API_CONFIG = {
-  baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "",
+  baseUrl: resolveApiBaseUrl(),
   endpoints: {
     scrapeProfiles: "/api/scrape/profiles",
     scrapePosts: "/api/scrape/posts",

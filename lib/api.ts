@@ -447,18 +447,18 @@ class ApiClient {
     }
 
     // Normalize items: move non-metadata fields into .data
-    const metadataKeys = [
-      "id",
-      "jobId",
-      "scrapedAt",
-      "url",
-      "platform",
-      "type",
-    ];
+    const metadataKeys = ["id", "jobId", "scrapedAt", "platform", "type"];
     const items: DatasetItem[] = response.data.items.map((item, index) => {
-      const data: Record<string, unknown> = {};
+      const itemUrl =
+        typeof item.postUrl === "string"
+          ? item.postUrl
+          : typeof item.url === "string"
+            ? item.url
+            : undefined;
+      const data: Record<string, unknown> = itemUrl ? { postUrl: itemUrl } : {};
       Object.keys(item).forEach((key) => {
         if (!metadataKeys.includes(key)) {
+          if (key === "url" || key === "postUrl") return;
           data[key] = item[key];
         }
       });
@@ -468,6 +468,7 @@ class ApiClient {
         jobId: (item.jobId ||
           params.jobId ||
           params.datasetId.replace("ds_", "")) as string,
+        url: itemUrl,
         scrapedAt: item.scrapedAt || new Date().toISOString(),
         data,
       };

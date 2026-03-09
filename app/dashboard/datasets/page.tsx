@@ -103,6 +103,7 @@ export default function DatasetsPage() {
   const [search, setSearch] = useState("");
   const [datasets, setDatasets] = useState<Job[]>([]);
   const [totalDatasets, setTotalDatasets] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [platformFilter, setPlatformFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -116,7 +117,15 @@ export default function DatasetsPage() {
         user?.id ?? null,
       );
 
-      if (!result.success || !result.data || cancelled) return;
+      if (cancelled) return;
+      if (!result.success || !result.data) {
+        setDatasets([]);
+        setTotalDatasets(0);
+        setLoadError(result.error ?? "No se pudo cargar el listado de datasets.");
+        return;
+      }
+
+      setLoadError(null);
       setDatasets(result.data.data);
       setTotalDatasets(result.data.pagination.total);
     }, 250);
@@ -210,6 +219,12 @@ export default function DatasetsPage() {
       />
 
       <div className="flex flex-col gap-6 p-6">
+        {loadError && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {loadError}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-[260px] flex-1 md:max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

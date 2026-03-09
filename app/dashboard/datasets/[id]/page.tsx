@@ -314,7 +314,12 @@ export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
   const dataKeys = Array.from(
     new Set(filteredItems.flatMap((item) => Object.keys(item.data ?? {}))),
   );
-  const tableColumns = ["id", ...dataKeys, "scrapedAt"];
+  const prioritizedColumns = ["postUrl", "url"];
+  const orderedDataKeys = [
+    ...prioritizedColumns.filter((key) => dataKeys.includes(key)),
+    ...dataKeys.filter((key) => !prioritizedColumns.includes(key)),
+  ];
+  const tableColumns = ["id", ...orderedDataKeys, "scrapedAt"];
 
   const handleExportCsv = () => {
     if (items.length === 0) return;
@@ -558,6 +563,8 @@ export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
                             ? item.id
                             : col === "scrapedAt"
                               ? formatDateTime(item.scrapedAt)
+                              : col === "url"
+                                ? item.url
                               : item.data?.[col];
 
                         return (
@@ -585,6 +592,18 @@ export default function DatasetDetailPage({ params }: DatasetDetailPageProps) {
                         {formatDateTime(item.scrapedAt)}
                       </span>
                     </div>
+                    {item.url && (
+                      <div className="mb-3">
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                        >
+                          Abrir postUrl <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
                     <JsonSyntax value={item.data} />
                   </Card>
                 ))}
